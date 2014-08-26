@@ -1,0 +1,13 @@
+node_modules
+pkg
+*.gem
+
+.DS_Store
+Gemfile.lock
+tmp
+bower_components
+
+dist
+staging
+
+docs

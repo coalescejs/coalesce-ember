@@ -1,0 +1,9 @@
+{
+  "framework": "qunit",
+  "test_page": "test/index.html",
+  "launch_in_ci": ["Firefox"],
+  "launch_in_dev": ["Firefox", "Chrome"],
+  "src_files": [
+    "dist/*.js"
+  ]
+}
