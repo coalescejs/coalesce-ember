@@ -1,6 +1,6 @@
-`import setupContainer from 'coalesce/ember/setup_container'`
-`import Model from 'coalesce/ember/model'`
-`import {attr, hasMany, belongsTo} from 'coalesce/ember/model'`
+`import setupApp from './support/setup_app'`
+`import Model from 'coalesce-ember/model/model'`
+`import {attr, hasMany, belongsTo} from 'coalesce-ember/model/model'`
 `import Attribute from 'coalesce/model/attribute'`
 `import BelongsTo from 'coalesce/model/belongs_to'`
 `import HasMany from 'coalesce/model/has_many'`
@@ -11,10 +11,13 @@ describe 'ember/model', ->
   App = null
 
   beforeEach ->
-    App = Ember.Namespace.create()
-    @container = new Ember.Container()
-    setupContainer(@container)
-    Coalesce.__container__ = @container
+    setupApp.apply(this)
+    App = @App
+    true
+    
+  afterEach ->
+    Ember.run ->
+      App.destroy()
   
   describe 'class definition', ->
   

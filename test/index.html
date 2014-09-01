@@ -17,19 +17,20 @@
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/handlebars/handlebars.runtime.js"></script>
     <script src="bower_components/ember/ember.js"></script>
+    <script src="bower_components/ember-mocha-adapter/adapter.js"></script>
     <script src="bower_components/lodash/dist/lodash.js"></script>
     <script src="bower_components/loader/loader.js"></script>
 
-    <script src="vendor/ember-inflector.js"></script>
     <script src="bower_components/jsondiffpatch/build/bundle.js"></script>
     <script src="bower_components/traceur-runtime/traceur-runtime.js"></script>
-    <script src="dist/coalesce-modules.js"></script>
-    <script src="dist/coalesce-test-modules.js"></script>
+    <script src="coalesce/coalesce-modules.js"></script>
+    <script src="dist/coalesce-ember-modules.js"></script>
+    <script src="dist/coalesce-ember-test-modules.js"></script>
     <script>
-        this.Coalesce = requireModule('coalesce')['default'];
-        requireModule('coalesce-test/_setup');
+        this.Cs = requireModule('coalesce-ember')['default'];
+        requireModule('coalesce-ember-test/_setup');
         Ember.keys(requirejs.entries).forEach(function(entry) {
-          if ((/coalesce\-test/).test(entry)) {
+          if ((/coalesce\-ember\-test/).test(entry)) {
             require(entry, null, null, true);
           }
         });

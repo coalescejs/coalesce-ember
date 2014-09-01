@@ -69,17 +69,17 @@ var devDist = (function() {
 
   var iifeStart = writeFile('iife-start', '(function() {');
   var iifeStop  = writeFile('iife-stop', '})();');
-  var bootstrap = writeFile('bootstrap', 'this.Ep = requireModule("coalesce-ember")["default"];\n');
+  var bootstrap = writeFile('bootstrap', 'this.Cs = requireModule("coalesce-ember")["default"];\n');
 
-  var trees = findBowerTrees().concat(['vendor', iifeStart, iifeStop, bootstrap, es6Modules]);
+  var trees = findBowerTrees().concat(['coalesce', iifeStart, iifeStop, bootstrap, es6Modules]);
 
-  return concat(mergeTrees(trees), {
+  return concat(mergeTrees(trees, {overwrite: true}), {
     inputFiles: [
       'iife-start',
-      'ember-inflector.js',
       'bundle.js', // jsondiffpatch dist
       'loader.js',
       'traceur-runtime.js',
+      'coalesce-modules.js',
       'coalesce-ember-modules.js',
       'bootstrap',
       'iife-stop'

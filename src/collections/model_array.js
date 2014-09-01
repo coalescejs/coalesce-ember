@@ -1,51 +1,60 @@
-import ObservableArray from './observable_array';
-import ModelSet from './model_set';
-import isEqual from '../utils/is_equal';
+import Coalesce from 'coalesce';
+import ModelSet from 'coalesce/collections/model_set';
+import isEqual from 'coalesce/utils/is_equal';
 
-export default class ModelArray extends ObservableArray {
+var get = Ember.get, set = Ember.set;
+
+export default Ember.ArrayProxy.extend({
   
-  arrayContentWillChange(index, removed, added) {
+  session: null,
+  meta: null,
+
+  arrayContentWillChange: function(index, removed, added) {
     for (var i=index; i<index+removed; i++) {
       var model = this.objectAt(i);
-      var session = this.session;
+      var session = get(this, 'session');
 
       if(session) {
         session.collectionManager.unregister(this, model);
       }
     }
 
-    super(index, removed, added);
-  }
+    this._super.apply(this, arguments);
+  },
 
-  arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
+  arrayContentDidChange: function(index, removed, added) {
+    this._super.apply(this, arguments);
 
     for (var i=index; i<index+added; i++) {
       var model = this.objectAt(i);
-      var session = this.session;
+      var session = get(this, 'session');
 
       if(session) {
         session.collectionManager.register(this, model);
       }
     }
-  }
+  },
 
-  removeObject(obj) {
-    var loc = this.length || 0;
+  removeObject: function(obj) {
+    var loc = get(this, 'length') || 0;
     while(--loc >= 0) {
       var curObject = this.objectAt(loc) ;
-      if (isEqual(curObject, obj)) this.removeAt(loc) ;
+      if (curObject.isEqual(obj)) this.removeAt(loc) ;
     }
     return this ;
-  }
+  },
 
-  contains(obj){
-    for(var i = 0; i < this.length ; i++) {
+  contains: function(obj){
+    for(var i = 0; i < get(this, 'length') ; i++) {
       var m = this.objectAt(i);
-      if(isEqual(obj, m)) return true;
+      if(obj.isEqual(m)) return true;
     }
     return false;
-  }
+  },
+
+  copy: function() {
+    return this.content.copy();
+  },
 
   /**
     Ensure that dest has the same content as this array.
@@ -54,28 +63,23 @@ export default class ModelArray extends ObservableArray {
     @param dest the other model collection to copy to
     @return dest
   */
-  copyTo(dest) {
-    var existing = new ModelSet(dest);
+  copyTo: function(dest) {
+    var existing = ModelSet.create();
+    existing.addObjects(dest);
 
     this.forEach(function(model) {
-      if(existing.has(model)) {
-        existing.delete(model);
+      if(existing.contains(model)) {
+        existing.remove(model);
       } else {
         dest.pushObject(model);
       }
     });
 
-    for(var model of existing) {
-      dest.removeObject(model);
-    }
-  }
-  
-  copy() {
-    return super(true);
-  }
+    dest.removeObjects(existing);
+  },
 
-  diff(arr) {
-    var diff = new this.constructor();
+  diff: function(arr) {
+    var diff = Ember.A();
 
     this.forEach(function(model) {
       if(!arr.contains(model)) {
@@ -90,13 +94,13 @@ export default class ModelArray extends ObservableArray {
     }, this);
 
     return diff;
-  }
+  },
 
-  isEqual(arr) {
+  isEqual: function(arr) {
     return this.diff(arr).length === 0;
-  }
+  },
 
-  load() {
+  load: function() {
     var array = this;
     return Ember.RSVP.all(this.map(function(model) {
       return model.load();
@@ -105,4 +109,4 @@ export default class ModelArray extends ObservableArray {
     });
   }
 
-}
+});

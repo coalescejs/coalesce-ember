@@ -1,4 +1,4 @@
-import Model from '../model/model';
+import Model from 'coalesce/model/model';
 var CoreObject = Ember.CoreObject;
 var Observable = Ember.Observable;
 var Mixin = Ember.Mixin;
@@ -168,7 +168,6 @@ EmberModel.reopenClass({
   }
   
 });
-
 
 export {attr, hasMany, belongsTo};
 

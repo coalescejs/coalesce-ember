@@ -1,3 +1,5 @@
+document.write('<div id="ember-testing-container"><div id="ember-testing"></div></div>');
+
 Ember.LOG_STACKTRACE_ON_DEPRECATION = false;
 
 var syncForTest = function(fn) {

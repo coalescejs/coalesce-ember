@@ -1,9 +1,7 @@
-/**
-  @module ember-data
-*/
 var get = Ember.get, capitalize = Ember.String.capitalize, underscore = Ember.String.underscore;
 
-import Model from '../model';
+import Model from '../model/model';
+import {PromiseArray} from '../promise';
 import './debug_info';
 
 /**
@@ -13,9 +11,6 @@ import './debug_info';
   @extends Ember.DataAdapter
   @private
 */
-
-var PromiseArray = Ember.ArrayProxy.extend(Ember.PromiseProxyMixin);
-
 export default Ember.DataAdapter.extend({
   getFilters: function() {
     return [

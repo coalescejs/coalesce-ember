@@ -1,9 +1,21 @@
-import Coalesce from './namespace';
+import Cs from './namespace';
+import Coalesce from 'coalesce/namespace';
 
-import from './initializers';
+import './initializers';
 
-import Model from './model';
+import Model from './model/model';
+import {attr, hasMany, belongsTo} from './model/model';
 
-Coalesce.Model = Model;
+Cs.Model = Model;
+Cs.attr = attr;
+Cs.hasMany = hasMany;
+Cs.belongsTo = belongsTo;
 
-export default Coalesce;
+Coalesce.Promise = Ember.RSVP.Promise;
+Coalesce.ajax = Ember.$.ajax;
+Coalesce.run = Ember.run;
+
+// Merge in Coalesce namespace
+_.defaults(Cs, Coalesce);
+
+export default Cs;

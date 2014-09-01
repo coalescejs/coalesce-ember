@@ -23,7 +23,7 @@ export default class EmberSession extends Session {
 
   query(type, query, opts) {
     return PromiseArray.create({
-      promise: super.query(type, query, opts);
+      promise: super.query(type, query, opts)
     });
   }
 

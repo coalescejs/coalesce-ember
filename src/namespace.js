@@ -5,21 +5,21 @@
 /**
   All Ember Data methods and functions are defined inside of this namespace.
 
-  @class Coalesce
+  @class Cs
   @static
 */
 
-var Coalesce;
-if ('undefined' === typeof Coalesce) {
+var Cs;
+if ('undefined' === typeof Cs) {
   /**
     @property VERSION
     @type String
     @default '<%= versionStamp %>'
     @static
   */
-  Coalesce = Ember.Namespace.create({
+  Cs = Ember.Namespace.create({
     VERSION: 'VERSION_STRING_PLACEHOLDER'
   });
 }
 
-export default Coalesce;
+export default Cs;

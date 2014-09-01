@@ -1,24 +1,26 @@
-import ModelArray from '../collections/model_array';
+import ModelArray from './model_array';
 
-export default class HasManyArray extends ModelArray {
+var get = Ember.get, set = Ember.set;
+
+export default ModelArray.extend({
   
-  get session() {
-    return this.owner && this.owner.session;
-  }
+  name: null,
+  owner: null,
+  session: Ember.computed.alias('owner.session'),
   
-  replace(idx, amt, objects) {
+  replace: function(idx, amt, objects) {
     if(this.session) {
       objects = objects.map(function(model) {
         return this.session.add(model);
       }, this);
     }
-    super(idx, amt, objects);
-  }
+    return this._super(idx, amt, objects);
+  },
 
-  arrayContentWillChange(index, removed, added) {
-    var model = this.owner,
-        name = this.name,
-        session = this.session;
+  arrayContentWillChange: function(index, removed, added) {
+    var model = get(this, 'owner'),
+        name = get(this, 'name'),
+        session = get(this, 'session');
 
     if(session) {
       session.modelWillBecomeDirty(model);
@@ -30,15 +32,15 @@ export default class HasManyArray extends ModelArray {
       }
     }
 
-    return super(index, removed, added);
-  }
+    return this._super.apply(this, arguments);
+  },
 
-  arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
+  arrayContentDidChange: function(index, removed, added) {
+    this._super.apply(this, arguments);
 
-    var model = this.owner,
-        name = this.name,
-        session = this.session;
+    var model = get(this, 'owner'),
+        name = get(this, 'name'),
+        session = get(this, 'session');
 
     if (session && !model._suspendedRelationships) {
       for (var i=index; i<index+added; i++) {
@@ -46,6 +48,6 @@ export default class HasManyArray extends ModelArray {
         session.inverseManager.registerRelationship(model, name, inverseModel);
       }
     }
-  }
+  },
 
-}
+});
