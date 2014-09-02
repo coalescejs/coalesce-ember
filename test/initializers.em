@@ -1,9 +1,12 @@
-`import setupApp from './support/setup_app'`
+`import {setupApp, teardownApp} from './support/app'`
 
 describe 'initializers', ->
 
   beforeEach ->
     setupApp.apply(this)
+    
+  afterEach ->
+    teardownApp.apply(this)
       
   it 'should setup container', ->
     expect(@container.lookup('session:main')).to.not.be.null

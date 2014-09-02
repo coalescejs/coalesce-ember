@@ -2,6 +2,7 @@ import Coalesce from 'coalesce';
 import {setupContainer} from 'coalesce/container';
 import DebugAdapter from './debug/debug_adapter';
 import Session from './session';
+import Errors from './model/errors';
 
 /**
   Create the default injections.
@@ -15,7 +16,9 @@ Ember.onLoad('Ember.Application', function(Application) {
       Coalesce.__container__ = container;
       setupContainer(container, application);
       
-      container.register('session:base',  Session);
+      container.register('model:errors', Errors);
+      
+      container.register('session:base', Session);
       container.register('session:main', container.lookupFactory('session:application') || Session);
       
       container.typeInjection('controller', 'adapter', 'adapter:main');

@@ -71,7 +71,7 @@ var devDist = (function() {
   var iifeStop  = writeFile('iife-stop', '})();');
   var bootstrap = writeFile('bootstrap', 'this.Cs = requireModule("coalesce-ember")["default"];\n');
 
-  var trees = findBowerTrees().concat(['coalesce', iifeStart, iifeStop, bootstrap, es6Modules]);
+  var trees = findBowerTrees().concat(['bower_components/coalesce', iifeStart, iifeStop, bootstrap, es6Modules]);
 
   return concat(mergeTrees(trees, {overwrite: true}), {
     inputFiles: [

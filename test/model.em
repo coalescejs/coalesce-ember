@@ -1,4 +1,4 @@
-`import setupApp from './support/setup_app'`
+`import {setupApp, teardownApp} from './support/app'`
 `import Model from 'coalesce-ember/model/model'`
 `import {attr, hasMany, belongsTo} from 'coalesce-ember/model/model'`
 `import Attribute from 'coalesce/model/attribute'`
@@ -16,8 +16,7 @@ describe 'ember/model', ->
     true
     
   afterEach ->
-    Ember.run ->
-      App.destroy()
+    teardownApp.apply(this)
   
   describe 'class definition', ->
   
