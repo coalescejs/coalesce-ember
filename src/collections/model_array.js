@@ -8,6 +8,13 @@ export default Ember.ArrayProxy.extend({
   
   session: null,
   meta: null,
+  
+  init: function() {
+    if(!get(this, 'content')) {
+      set(this, 'content', []);
+    }
+    this._super.apply(this, arguments);
+  },
 
   arrayContentWillChange: function(index, removed, added) {
     for (var i=index; i<index+removed; i++) {

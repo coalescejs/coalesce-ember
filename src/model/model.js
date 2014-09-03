@@ -1,4 +1,6 @@
+import applyEmber from '../utils/apply_ember';
 import Model from 'coalesce/model/model';
+
 var CoreObject = Ember.CoreObject;
 var Observable = Ember.Observable;
 var Mixin = Ember.Mixin;
@@ -6,54 +8,7 @@ var Mixin = Ember.Mixin;
 var merge = _.merge;
 
 
-/**
-  Attempting to create a subclass of `Model` that supports
-  CP's and Ember.Observable.
-*/
-function EmberModel() {
-  return CoreObject.apply(this);
-}
-
-var PrototypeMixin = Mixin.create(CoreObject.PrototypeMixin);
-PrototypeMixin.ownerConstructor = EmberModel;
-EmberModel.PrototypeMixin = PrototypeMixin;
-EmberModel.prototype = Object.create(Model.prototype);
-
-// These static properties use getters and do not play well with ClassMixin
-var SPECIAL_PROPS = ['fields', 'attributes', 'relationships'];
-var ModelClassProps = {};
-for(var key in Model) {
-  if(!Model.hasOwnProperty(key)) continue;
-  if(SPECIAL_PROPS.indexOf(key) !== -1) continue;
-  ModelClassProps[key] = Model[key];
-}
-
-var ClassMixin = Mixin.create(ModelClassProps, CoreObject.ClassMixin);
-ClassMixin.reopen({
-  extend: function() {
-    var klass = this._super.apply(this, arguments);
-    SPECIAL_PROPS.forEach(function(name) {
-      var desc = Object.getOwnPropertyDescriptor(Model, name);
-      Object.defineProperty(klass, name, desc);
-    });
-    return klass;
-  }
-});
-
-ClassMixin.apply(EmberModel);
-ClassMixin.ownerConstructor = EmberModel;
-EmberModel.ClassMixin = ClassMixin;
-
-EmberModel.proto = function() {
-  return this.prototype;
-}
-
-EmberModel = EmberModel.extend(Observable, {
-  
-  init: function() {
-    Model.apply(this, arguments);
-    this._super.apply(this, arguments);
-  },
+var EmberModel = applyEmber(Model, ['fields', 'attributes', 'relationships'], Observable, {
   
   attributeWillChange: function(name) {
     Ember.propertyWillChange(this, name);
