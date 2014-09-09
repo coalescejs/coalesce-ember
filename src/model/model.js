@@ -1,5 +1,9 @@
 import applyEmber from '../utils/apply_ember';
 import Model from 'coalesce/model/model';
+import Field from 'coalesce/model/field';
+import CoreAttribute from 'coalesce/model/attribute';
+import CoreHasMany from 'coalesce/model/has_many';
+import CoreBelongsTo from 'coalesce/model/belongs_to';
 
 var CoreObject = Ember.CoreObject;
 var Observable = Ember.Observable;
@@ -8,30 +12,46 @@ var Mixin = Ember.Mixin;
 var merge = _.merge;
 
 
-var EmberModel = applyEmber(Model, ['fields', 'attributes', 'relationships'], Observable, {
+var EmberModel = applyEmber(Model, ['fields', 'ownFields', 'attributes', 'relationships'], Observable, {
   
   attributeWillChange: function(name) {
+    Model.prototype.attributeWillChange.apply(this, arguments);
     Ember.propertyWillChange(this, name);
   },
   
   attributeDidChange: function(name) {
+    Model.prototype.attributeDidChange.apply(this, arguments);
     Ember.propertyDidChange(this, name);
   },
   
   belongsToWillChange: function(name) {
+    Model.prototype.belongsToWillChange.apply(this, arguments);
     Ember.propertyWillChange(this, name);
   },
   
   belongsToDidChange: function(name) {
+    Model.prototype.belongsToDidChange.apply(this, arguments);
     Ember.propertyDidChange(this, name);
   },
   
   hasManyWillChange: function(name) {
+    Model.prototype.hasManyWillChange.apply(this, arguments);
     Ember.propertyWillChange(this, name);
   },
   
   hasManyDidChange: function(name) {
+    Model.prototype.hasManyDidChange.apply(this, arguments);
     Ember.propertyDidChange(this, name);
+  },
+  
+  didDefineProperty: function(obj, keyName, value) {
+    if(value instanceof Attr) {
+      obj.constructor.defineField(new CoreAttribute(keyName, value));
+    } else if (value instanceof BelongsTo) {
+      obj.constructor.defineField(new CoreBelongsTo(keyName, value));
+    } else if(value instanceof HasMany) {
+      obj.constructor.defineField(new CoreHasMany(keyName, value));
+    }
   }
   
 });
@@ -92,33 +112,9 @@ EmberModel.reopenClass({
   },
   
   extend: function() {
-    
-    var schema = {
-      attributes: {},
-      relationships: {}
-    };
-    for(var i = 0; i < arguments.length; i++) {
-      var hash = arguments[i];
-      if(hash instanceof Mixin) continue;
-      
-      for(var key in hash) {
-        if(!hash.hasOwnProperty(key)) return;
-        var value = hash[key];
-        
-        if(value instanceof Attr) {
-          delete hash[key];
-          schema.attributes[key] = value;
-        } else if(value instanceof HasMany || value instanceof BelongsTo) {
-          delete hash[key];
-          schema.relationships[key] = value;
-        }
-      }
-    }
-    
     var klass = this._super.apply(this, arguments);
-    // copy fields down since not part of ClassMixin
-    klass._fields = this._fields;
-    klass.defineSchema(schema);
+    // eagerly setup the prototype
+    klass.proto();
     return klass;
   }
   

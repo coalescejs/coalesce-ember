@@ -110,8 +110,10 @@ describe 'ember/model', ->
     beforeEach ->
       class @User extends Model
         name: attr 'string'
+      @User.typeKey = 'user'
       class @Admin extends @User
         role: attr 'string'
+      @Admin.typeKey = 'admin'
         
     it 'can add fields', ->
       expect(@Admin.fields.get('role')).to.exist

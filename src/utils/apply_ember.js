@@ -39,6 +39,12 @@ export default function applyEmber(Type, specialClassKeys=[], ...mixins) {
         var desc = Object.getOwnPropertyDescriptor(Type, name);
         Object.defineProperty(klass, name, desc);
       });
+      Object.defineProperty(klass, 'parentType', {
+        get: function() {
+          // Object.getPrototypeOf does not work with Ember
+          return this.superclass;
+        }
+      });
       return klass;
     }
   });

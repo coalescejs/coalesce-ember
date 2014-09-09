@@ -2,7 +2,8 @@ function setupApp() {
   var self = this;
   Ember.run(function() {
     self.App = Ember.Application.create({rootElement: '#ember-testing'});
-    self.App.setupForTesting();
+    // don't need this since we currently destroy the app after each run
+    //self.App.setupForTesting();
     self.App.injectTestHelpers();
   });
   this.container = this.App.__container__;
