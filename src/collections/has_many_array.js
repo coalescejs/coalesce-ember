@@ -6,15 +6,33 @@ export default ModelArray.extend({
   
   name: null,
   owner: null,
-  session: Ember.computed.alias('owner.session'),
+  session: Ember.computed(function() {
+    return get(this, 'owner.session');
+  }).volatile(),
   
   replace: function(idx, amt, objects) {
-    if(this.session) {
+    var session = get(this, 'session');
+    
+    if(session) {
       objects = objects.map(function(model) {
-        return this.session.add(model);
+        return session.add(model);
       }, this);
     }
     return this._super(idx, amt, objects);
+  },
+  
+  // XXX: this deviates from coalesce proper
+  objectAtContent: function(index) {
+    var content = get(this, 'content'),
+        model = content.objectAt(index),
+        session = get(this, 'session');
+
+    if (session && model) {
+      // This will replace proxies with their actual models
+      // if they are loaded
+      return session.add(model);
+    }
+    return model;
   },
 
   arrayContentWillChange: function(index, removed, added) {
