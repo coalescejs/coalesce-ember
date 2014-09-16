@@ -15,7 +15,6 @@ Cs.belongsTo = belongsTo;
 Coalesce.Promise = Ember.RSVP.Promise;
 Coalesce.ajax = Ember.$.ajax;
 Coalesce.run = Ember.run;
-Coalesce.HasManyArray = HasManyArray;
 
 // Merge in Coalesce namespace
 _.defaults(Cs, Coalesce);

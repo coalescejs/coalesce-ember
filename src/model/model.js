@@ -4,12 +4,14 @@ import Field from 'coalesce/model/field';
 import CoreAttribute from 'coalesce/model/attribute';
 import CoreHasMany from 'coalesce/model/has_many';
 import CoreBelongsTo from 'coalesce/model/belongs_to';
+import HasManyArray from '../collections/has_many_array';
 
 var CoreObject = Ember.CoreObject;
 var Observable = Ember.Observable;
 var Mixin = Ember.Mixin;
 
-var merge = _.merge;
+var merge = _.merge,
+    defaults = _.defaults;
 
 
 var EmberModel = applyEmber(Model, ['fields', 'ownFields', 'attributes', 'relationships'], Observable, {
@@ -57,7 +59,9 @@ var EmberModel = applyEmber(Model, ['fields', 'ownFields', 'attributes', 'relati
 });
 
 function Attr(type, options={}) {
-  this.type = type;
+  defaults(options, {
+    type: type
+  });
   merge(this, options);
   return this;
 }
@@ -67,8 +71,11 @@ function attr(type, options={}) {
 }
 
 function HasMany(type, options={}) {
-  this.kind = 'hasMany';
-  this.type = type;
+  defaults(options, {
+    kind: 'hasMany',
+    collectionType: HasManyArray,
+    type: type
+  });
   merge(this, options);
   return this;
 }
@@ -78,8 +85,10 @@ function hasMany(type, options={}) {
 }
 
 function BelongsTo(type, options={}) {
-  this.kind = 'belongsTo';
-  this.type = type;
+  defaults(options, {
+    kind: 'belongsTo',
+    type: type
+  });
   merge(this, options);
   return this;
 }
