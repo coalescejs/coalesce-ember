@@ -4,7 +4,6 @@ var pickFiles = require('broccoli-static-compiler');
 var mergeTrees = require('broccoli-merge-trees');
 var writeFile = require('broccoli-file-creator');
 var moveFile = require('broccoli-file-mover');
-var findBowerTrees = require('broccoli-bower');
 var concat = require('broccoli-concat');
 var uglify = require('broccoli-uglify-js');
 var removeFile = require('broccoli-file-remover');
@@ -17,7 +16,7 @@ var calculateVersion = require('./lib/calculate-version');
 
 var licenseJs = fs.readFileSync('./generators/license.js').toString();
 
-var es6Modules = (function() {
+var devAmd = (function() {
   var tree = pickFiles('src', {
     srcDir: '/',
     destDir: 'coalesce-ember'
@@ -38,62 +37,15 @@ var es6Modules = (function() {
   });
   return concat(transpiled, {
     inputFiles: ['**/*.js'],
-    outputFile: '/coalesce-ember-modules.js'
+    outputFile: '/coalesce-ember.amd.js'
   });
 })();
 
+var prodAmd = (function() {
 
-var es6TestModules = (function() {
-  var tree = pickFiles('test', {
-    srcDir: '/',
-    destDir: 'coalesce-ember-test'
-  });
-
-  tree = emberScript(tree, {
-    bare: true
-  });
-
-  var transpiled = traceur(tree, {
-    moduleName: true,
-    modules: 'amd'
-  });
-  return concat(transpiled, {
-    inputFiles: ['**/*.js'],
-    outputFile: '/coalesce-ember-test-modules.js'
-  });
-})();
-
-
-var devDist = (function() {
-
-  var iifeStart = writeFile('iife-start', '(function() {');
-  var iifeStop  = writeFile('iife-stop', '})();');
-  var bootstrap = writeFile('bootstrap', 'this.Cs = requireModule("coalesce-ember")["default"];\n');
-
-  var trees = findBowerTrees().concat(['bower_components/coalesce', iifeStart, iifeStop, bootstrap, es6Modules]);
-
-  return concat(mergeTrees(trees, {overwrite: true}), {
-    inputFiles: [
-      'iife-start',
-      'bundle.js', // jsondiffpatch dist
-      'loader.js',
-      'traceur-runtime.js',
-      'coalesce-modules.js',
-      'coalesce-ember-modules.js',
-      'bootstrap',
-      'iife-stop'
-    ],
-    outputFile: '/coalesce-ember.js'
-  });
-
-})();
-
-
-var prodDist = (function() {
-
-  var tree = moveFile(devDist, {
-    srcFile: 'coalesce-ember.js',
-    destFile: '/coalesce-ember.prod.js'
+  var tree = moveFile(devAmd, {
+    srcFile: 'coalesce-ember.amd.js',
+    destFile: '/coalesce-ember.prod.amd.js'
   });
 
   tree = defeatureify(tree, {
@@ -108,30 +60,140 @@ var prodDist = (function() {
 
 })();
 
-var minDist = (function() {
+var vendor = mergeTrees(['node_modules/traceur/bin', 'bower_components']);
 
-  var tree = moveFile(prodDist, {
-    srcFile: 'coalesce-ember.prod.js',
-    destFile: '/coalesce-ember.min.js'
+var devStandalone = (function() {
+  var iifeStart = writeFile('iife-start', '(function() {');
+  var iifeStop  = writeFile('iife-stop', '})();');
+  var bootstrap = writeFile('bootstrap', 'this.Coalesce = requireModule("coalesce-ember")["default"];\n');
+
+  var trees = [vendor, iifeStart, iifeStop, bootstrap, devAmd];
+
+  return concat(mergeTrees(trees), {
+    inputFiles: [
+      'iife-start',
+      'jsondiffpatch/build/bundle.js',
+      'loader/loader.js',
+      'traceur-runtime.js',
+      'coalesce/coalesce.amd.js',
+      'coalesce-ember.amd.js',
+      'bootstrap',
+      'iife-stop'
+    ],
+    outputFile: '/coalesce-ember.standalone.js'
+  });
+})();
+
+var prodStandalone = (function() {
+  var iifeStart = writeFile('iife-start', '(function() {');
+  var iifeStop  = writeFile('iife-stop', '})();');
+  var bootstrap = writeFile('bootstrap', 'this.Coalesce = requireModule("coalesce-ember")["default"];\n');
+
+  var trees = [vendor, iifeStart, iifeStop, bootstrap, prodAmd];
+
+  return concat(mergeTrees(trees), {
+    inputFiles: [
+      'iife-start',
+      'jsondiffpatch/build/bundle.js',
+      'loader/loader.js',
+      'traceur-runtime.js',
+      'coalesce/coalesce.prod.amd.js',
+      'coalesce-ember.prod.amd.js',
+      'bootstrap',
+      'iife-stop'
+    ],
+    outputFile: '/coalesce-ember.prod.standalone.js'
+  });
+})();
+
+var minStandalone = (function() {
+
+  var tree = moveFile(prodStandalone, {
+    srcFile: 'coalesce-ember.prod.standalone.js',
+    destFile: '/coalesce-ember.prod.standalone.min.js'
   });
   return uglify(tree);
 
 })();
+
+var testTree = (function() {
+  var testAmd = (function() {
+    var tree = pickFiles('test', {
+      srcDir: '/',
+      destDir: 'coalesce-ember-test'
+    });
+
+    tree = emberScript(tree, {
+      bare: true
+    });
+
+    var transpiled = traceur(tree, {
+      moduleName: true,
+      modules: 'amd'
+    });
+    return concat(transpiled, {
+      inputFiles: ['**/*.js'],
+      outputFile: '/coalesce-ember-test.amd.js'
+    });
+  })();
+  
+  var testVendorJs = concat(vendor, {
+    inputFiles: [
+      'mocha/mocha.js',
+      'chai/chai.js',
+      'jquery/dist/jquery.js',
+      'handlebars/handlebars.runtime.js',
+      'ember/ember.js',
+      'ember-mocha-adapter/adapter.js',
+      'lodash/dist/lodash.js',
+      'loader/loader.js',
+      'jsondiffpatch/build/bundle.js',
+      'traceur-runtime.js',
+      'coalesce/coalesce.amd.js'
+    ],
+    outputFile: '/vendor.js'
+  });
+  
+  var testVendorCss = pickFiles(vendor, {
+    srcDir: '/mocha',
+    files: ['mocha.css'],
+    destDir: '/'
+  });
+  
+  var dummy = writeFile('testem.js', '');
+  var trees = mergeTrees([testVendorJs, testAmd, devAmd, 'test', dummy, testVendorCss]);
+  return pickFiles(trees, {
+    srcDir: '/',
+    files: [
+      'testem.js',
+      'vendor.js',
+      'mocha.css',
+      'coalesce-ember.amd.js',
+      'coalesce-ember-test.amd.js',
+      'index.html'
+    ],
+    destDir: 'test'
+  });
+  
+})();
+
 
 var bowerJSON = writeFile('bower.json', JSON.stringify({
   name: 'coalesce-ember',
   version: 'VERSION_STRING_PLACEHOLDER',
   license: "MIT",
   main: 'coalesce-ember.js',
+  ignore: ['docs', 'test'],
   keywords: [
-    "ember.js",
+    "coalesce-ember",
     "orm",
     "persistence",
+    "data",
     "sync"
   ]
 }, null, 2));
 
-distTree = mergeTrees([bowerJSON, es6Modules, es6TestModules, devDist, prodDist, minDist]);
+distTree = mergeTrees([bowerJSON, devAmd, prodAmd, devStandalone, prodStandalone, minStandalone]);
 distTree = replace(distTree, {
   files: [ '**/*.js' ],
   patterns: [
@@ -150,4 +212,4 @@ var docs = yuidocCompiler('src', {
   destDir: 'docs'
 });
 
-module.exports = mergeTrees([docs, distTree]);
+module.exports = mergeTrees([docs, distTree, testTree]);
