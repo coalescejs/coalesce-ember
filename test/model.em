@@ -51,6 +51,13 @@ describe 'ember/model', ->
         
       user = User.create(name: 'test')
       expect(user.nameDisplay).to.eq('TEST')
+      
+    it 'populates field metadata', ->
+      expect(@Post.fields.size).to.eq(2)
+      postFactory = @container.lookupFactory('model:post')
+      expect(postFactory.fields.size).to.eq(2)
+      expect(@Post.create().constructor.fields.size).to.eq(2)
+      expect(postFactory.create().constructor.fields.size).to.eq(2)
   
     describe 'schema macros', ->
     
