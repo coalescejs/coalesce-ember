@@ -131,6 +131,26 @@ describe 'ember/model', ->
     it 'does not modify the parent fields', ->
       expect(@User.fields.get('role')).to.not.exist
       
+  describe '.isNew', ->
+    
+    it 'is observable', ->
+      class User extends Model
+        name: attr 'string'
+      @container.register('model:user', User)
+        
+      user = @session.create 'user',
+        name: 'Wes'
+
+      expect(user.isNew).to.be.true
+      observerHit = false
+
+      Ember.addObserver user, 'isNew', ->
+        expect(user.isNew).to.be.false
+        observerHit = true
+
+      @session.merge User.create(id: "1", name: 'Wes', clientId: user.clientId)
+      expect(user.isNew).to.be.false
+      expect(observerHit).to.be.true
       
   describe '.isDirty', ->
     

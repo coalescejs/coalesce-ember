@@ -2,7 +2,7 @@
   "name": "coalesce",
   "private": true,
   "devDependencies": {
-    "coalesce": "coalescejs/coalesce-shim#ced451a84049c1d2c9bff912c536a087321eae0f",
+    "coalesce": "coalescejs/coalesce-shim#0c0f5f6b7ba6a85fb3344cb0a00d21f52e17601b",
     "ember": "~1.6.0",
     "loader": "stefanpenner/loader.js#1.0.0",
     "jsondiffpatch": "~0.1.8",

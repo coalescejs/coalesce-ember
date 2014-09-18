@@ -16,6 +16,22 @@ var merge = _.merge,
 
 var EmberModel = applyEmber(Model, ['fields', 'ownFields', 'attributes', 'relationships'], Observable, {
   
+  metaWillChange: function(name) {
+    Model.prototype.metaWillChange.apply(this, arguments);
+    Ember.propertyWillChange(this, name);
+    if(name === 'id') {
+      Ember.propertyWillChange(this, 'isNew');
+    }
+  },
+  
+  metaDidChange: function(name) {
+    Model.prototype.metaDidChange.apply(this, arguments);
+    Ember.propertyDidChange(this, name);
+    if(name === 'id') {
+      Ember.propertyDidChange(this, 'isNew');
+    }
+  },
+  
   attributeWillChange: function(name) {
     Model.prototype.attributeWillChange.apply(this, arguments);
     Ember.propertyWillChange(this, name);
