@@ -2,12 +2,13 @@
   "name": "coalesce",
   "private": true,
   "devDependencies": {
-    "coalesce": "coalescejs/coalesce-shim#0c0f5f6b7ba6a85fb3344cb0a00d21f52e17601b",
+    "coalesce": "coalescejs/coalesce-shim#de8b9202822c4a51d4479811b3e7e7e017af1728",
     "ember": "~1.6.0",
     "loader": "stefanpenner/loader.js#1.0.0",
     "jsondiffpatch": "~0.1.8",
     "mocha": "~1.20.1",
     "chai": "~1.9.1",
-    "ember-mocha-adapter": "~0.2.1"
+    "ember-mocha-adapter": "~0.2.1",
+    "lodash": "~2.4.1"
   }
 }

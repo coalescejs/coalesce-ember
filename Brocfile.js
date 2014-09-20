@@ -72,7 +72,6 @@ var devStandalone = (function() {
   return concat(mergeTrees(trees), {
     inputFiles: [
       'iife-start',
-      'jsondiffpatch/build/bundle.js',
       'loader/loader.js',
       'traceur-runtime.js',
       'coalesce/coalesce.amd.js',
@@ -94,7 +93,6 @@ var prodStandalone = (function() {
   return concat(mergeTrees(trees), {
     inputFiles: [
       'iife-start',
-      'jsondiffpatch/build/bundle.js',
       'loader/loader.js',
       'traceur-runtime.js',
       'coalesce/coalesce.prod.amd.js',
@@ -147,7 +145,6 @@ var testTree = (function() {
       'ember-mocha-adapter/adapter.js',
       'lodash/dist/lodash.js',
       'loader/loader.js',
-      'jsondiffpatch/build/bundle.js',
       'traceur-runtime.js',
       'coalesce/coalesce.amd.js'
     ],
