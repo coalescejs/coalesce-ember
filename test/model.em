@@ -4,6 +4,7 @@
 `import Attribute from 'coalesce/model/attribute'`
 `import BelongsTo from 'coalesce/model/belongs_to'`
 `import HasMany from 'coalesce/model/has_many'`
+`import Errors from 'coalesce-ember/model/errors'`
 
 describe 'ember/model', ->
 
@@ -151,6 +152,40 @@ describe 'ember/model', ->
       @session.merge User.create(id: "1", name: 'Wes', clientId: user.clientId)
       expect(user.isNew).to.be.false
       expect(observerHit).to.be.true
+      
+  describe '.errors', ->
+  
+    beforeEach ->
+      class User extends Model
+        name: attr 'string'
+      @User = User
+      @container.register('model:user', User)
+    
+    it 'is observable', ->
+      observerHit = false
+      user = @session.create 'user',
+        name: 'Wes'
+        
+      Ember.addObserver user, 'errors', ->
+        observerHit = true
+      
+      @session.merge @User.create(clientId: user.clientId, errors: Errors.create({name: 'is dumb'}))
+      
+      expect(observerHit).to.be.true
+      
+    it 'has observable keys', ->
+      observerHit = false
+      user = @session.create 'user',
+        name: 'Wes'
+        
+      Ember.addObserver user, 'errors.name', ->
+        observerHit = true
+      
+      @session.merge @User.create(clientId: user.clientId, errors: Errors.create({name: 'is dumb'}))
+      
+      expect(observerHit).to.be.true
+      
+      
       
   describe '.isDirty', ->
     

@@ -139,6 +139,7 @@ var testTree = (function() {
     inputFiles: [
       'mocha/mocha.js',
       'chai/chai.js',
+      'sinonjs/sinon.js',
       'jquery/dist/jquery.js',
       'handlebars/handlebars.runtime.js',
       'ember/ember.js',

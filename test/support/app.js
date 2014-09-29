@@ -7,11 +7,14 @@ function setupApp() {
     self.App.injectTestHelpers();
   });
   this.container = this.App.__container__;
-  this.session = this.container.lookup('session:main')
+  this.session = this.container.lookup('session:main');
+  this.server = sinon.fakeServer.create();
+  this.server.autoRespond = true;
 }
 
 function teardownApp() {
   var self = this;
+  this.server.restore();
   Ember.run(function() {
     self.App.destroy();
   });
