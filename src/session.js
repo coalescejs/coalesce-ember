@@ -51,4 +51,17 @@ export default class EmberSession extends Session {
     return newQuery;
   }
 
+  /**
+  @return {Promise}
+  */
+  static loadFromStorage(session){
+    return super.loadFromStorage(session).then(function(session){
+        var coalesceEmberQuery = buildQuery(session.queryCache.type, session.queryCache.params);
+        coalesceEmberQuery.set('content', session.queryCache.toArray());
+
+        session.queryCache = coalesceEmberQuery;
+        return session;
+    });
+  }
+
 }
