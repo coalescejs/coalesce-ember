@@ -52,14 +52,20 @@ export default class EmberSession extends Session {
   }
 
   /**
-  @return {Promise}
+    Override loadFromStorage so that the session's query cache queries values are of a Ember type Query
+    @return {Promise}
   */
   static loadFromStorage(session){
     return super.loadFromStorage(session).then(function(session){
-        var coalesceEmberQuery = buildQuery(session.queryCache.type, session.queryCache.params);
-        coalesceEmberQuery.set('content', session.queryCache.toArray());
+        session.queryCache.forEachQuery(function(value){
+          
+          var coalesceEmberQuery = this.buildQuery(value.type, value.params);
 
-        session.queryCache = coalesceEmberQuery;
+          coalesceEmberQuery.set('content', value.toArray());
+
+          return coalesceEmberQuery;
+        }, session);
+
         return session;
     });
   }
