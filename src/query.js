@@ -1,4 +1,6 @@
-var get = Ember.get, set = Ember.set;
+var get = Ember.get,
+    set = Ember.set,
+    splice = Array.prototype.splice;
 
 var Query = Ember.ArrayProxy.extend({
   session: null,
@@ -25,6 +27,7 @@ var Query = Ember.ArrayProxy.extend({
     // if we replaced exactly the same number of items, then pass only the
     // replaced range. Otherwise, pass the full remaining array length
     // since everything has shifted
+    
     var len = objects ? objects.length : 0;
     this.arrayContentWillChange(idx, amt, len);
 
@@ -41,7 +44,7 @@ var Query = Ember.ArrayProxy.extend({
 
 function replace(array, idx, amt, objects) {
   var args = [].concat(objects), chunk, ret = [],
-    // https://code.google.com/p/chromium/issues/detail?id=56588
+  // https://code.google.com/p/chromium/issues/detail?id=56588
   size = 60000, start = idx, ends = amt, count;
 
   while (args.length) {
@@ -54,7 +57,8 @@ function replace(array, idx, amt, objects) {
     start += size;
     ends -= count;
 
-    ret = ret.concat(splice.apply(array, chunk));
+    var splicedChunk = splice.apply(array.toArray(), chunk);
+    ret = ret.concat(splicedChunk);
   }
   return ret;
 }

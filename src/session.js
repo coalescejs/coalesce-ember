@@ -70,4 +70,27 @@ export default class EmberSession extends Session {
     });
   }
 
+  /**
+    Queries the server and bypasses the cache.
+
+    @param {query} The Query to be refreshed
+    @param {opts} opts Additional options
+    @return {Promise}
+  */
+  //This method was copied here from Coalesce solely for the purpose of calling query.length with the get() accessor.
+  //TODO consider drying this up somehow.
+  refreshQuery(query, opts) {
+    // TODO: for now we populate the query in the session, eventually this
+    // should be done in the adapter layer a la models
+    var promise = this.adapter.query(query.type.typeKey, query.params, opts, this).then(function(models) {
+      query.meta = models.meta;
+      query.replace(0, query.get('length'), models);
+      return query;
+    });
+    this.queryCache.add(query, promise);
+    
+    return promise;
+  }
+
+
 }
