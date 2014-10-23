@@ -69,3 +69,58 @@ describe 'integration', ->
       ),(->
         
       ))
+    # create 3 users, go offline, delete them all, go online, flush, check that all are indeed deleted
+    it 'should delete all (offline) deleted records after coming back online', ->
+      session = @session
+      server = @server
+
+      server.respondWith "POST", "/users", (xhr, url) ->
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 1, name:"Jerry", client_rev:1, client_id:"user1"}]})
+        
+      user = session.create('user', name: 'Jerry')
+
+      server.respondWith "POST", "/users", (xhr, url) ->
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 2, name:"Bob", client_rev:1, client_id:"user2"}]})
+        
+      user2 = session.create('user', name: 'Phil')
+
+      server.respondWith "POST", "/users", (xhr, url) ->
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 3, name:"Phil", client_rev:1, client_id:"user3"}]})
+        
+      user3 = session.create('user', name: 'Jerry')
+      
+      session.flush().then ->
+
+        # go offline
+        server.respondWith "DELETE", "/users/1", (xhr, url) ->
+          xhr.respond 0, null, null
+
+        session.deleteModel(user)
+
+        session.flush().then ->
+
+          server.respondWith "DELETE", "/users/2", (xhr, url) ->
+            xhr.respond 0, null, null
+
+          session.deleteModel(user2)
+
+          debugger 
+          session.flush().then ->
+            server.respondWith "DELETE", "/users/3", (xhr, url) ->
+              xhr.respond 0, null, null
+
+            session.deleteModel(user3)
+
+            session.flush().then ->
+
+              server.respondWith "DELETE", "/users/1", (xhr, url) ->
+                xhr.respond 204, {}, null
+
+              server.respondWith "DELETE", "/users/2", (xhr, url) ->
+                xhr.respond 204, {}, null
+
+              server.respondWith "DELETE", "/users/3", (xhr, url) ->
+                xhr.respond 204, {}, null
+
+              session.flush().then ->
+                # CHECK THAT THE OBJECTS ARE DELETED!
