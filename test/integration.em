@@ -34,5 +34,38 @@ describe 'integration', ->
         expect(user.errors).to.be.an.instanceOf(Errors)
         expect(user.errors.name).to.eq('is dumb')
       
+  describe 'online and offline crud', ->
 
-      
+    it 'should retain isDeleted on flush error', ->
+      session = @session
+      server = @server
+
+      server.respondWith "POST", "/users", (xhr, url) ->
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 1, name:"Jerry", client_rev:1, client_id:"user1"}]})
+        
+      user = session.create('user', name: 'Jerry')
+
+      session.flush().then((->
+        expect(session.newModels.size).to.eq(0)
+        expect(session.models[0].get('name')).to.eq('Jerry')
+        expect(session.models[0].get('isNew')).to.be.false
+        expect(session.models[0].get('id')).to.eq('1')
+
+        # go offline
+        server.respondWith "DELETE", "/users/1", (xhr, url) ->
+          xhr.respond 0, null, null
+
+        session.deleteModel(user)
+
+        expect(session.models[0].get('isDeleted')).to.be.true
+
+        session.flush().then(null,(->
+          expect(session.models[0].get('isDeleted')).to.be.true
+
+          # next to add putting server back online
+          # issueing flush
+          # and checking model set collections and flags
+        ))
+      ),(->
+        
+      ))
