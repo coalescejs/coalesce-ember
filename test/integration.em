@@ -5,17 +5,34 @@
 `import BelongsTo from 'coalesce/model/belongs_to'`
 `import HasMany from 'coalesce/model/has_many'`
 `import Errors from 'coalesce-ember/model/errors'`
+`import Coalesce from 'coalesce'`
+`import EmberSession from 'coalesce-ember/session'`
 
 describe 'integration', ->
 
   beforeEach ->
     setupApp.apply(this)
     App = @App
-    class User extends Model
+
+    class @User extends Model
       name: attr 'string'
-    User.typeKey = 'user'
-    @User = User
-    @container.register('model:user', User)
+    @User.typeKey = 'user'
+    
+    class @Post extends Model
+      title: attr 'string'
+      user: belongsTo 'user'
+      comments: hasMany 'comment'
+    @Post.typeKey = 'post'
+    
+    class @Comment extends Model
+      text: attr 'string'
+      post: belongsTo 'post'
+    @Comment.typeKey = 'comment'
+
+    @container.register 'model:post', @Post
+    @container.register 'model:comment', @Comment
+    @container.register 'model:user', @User
+
     true
     
   afterEach ->
@@ -33,7 +50,77 @@ describe 'integration', ->
       @session.flush().then null, ->
         expect(user.errors).to.be.an.instanceOf(Errors)
         expect(user.errors.name).to.eq('is dumb')
+
+  describe 'save and load from storage', ->
+    beforeEach ->
+      @UserSerializer = Coalesce.ModelSerializer.extend
+        typeKey: 'user'
+
+      @container.register 'serializer:user', @UserSerializer
+
+      @PostSerializer = Coalesce.ModelSerializer.extend
+        typeKey: 'post'
+
+      @container.register 'serializer:post', @PostSerializer
+
+    it "should persist session state between saving and loading to storage", ->
+      user1 = @User.create
+        id: 1
+        name: "Bob"
+
+      user2 = @User.create
+        id: 2
+        name: "Jim"
+
+      post1 = @Post.create
+        id: '12a'
+        title: "Bobs first post"
+
+      post2 = @Post.create
+        id: '12b'
+        title: "Bobs second post"
+
+      post3 = @Post.create
+        id: '13a'
+        title: "Jims first post"
+
+      post4 = @Post.create
+        id: '13b'
+        title: "Jims second post"
+
+      user1.get('posts').pushObject post1
+      user1.get('posts').pushObject post2
+
+      user2.get('posts').pushObject post3
+      user2.get('posts').pushObject post4
+
+      @session.merge user1
+      @session.merge user2
+      # @session.merge post1
+      # @session.merge post2
+
+      session = @session
+      container = @container
       
+      expect(session.idManager.uuid).to.eq(7)
+      
+      expect(session.models.size).to.eq(6)
+
+      EmberSession.saveToStorage(@session).then((()->
+        session = session.newSession()
+        EmberSession.loadFromStorage(session).then((->
+
+          expect(session.idManager.uuid).to.eq(7)
+          expect(session.models.size).to.eq(6)
+        ),( ->
+          
+        ))
+      ),(() -> 
+        
+      ))
+
+
+
   describe 'online and offline crud', ->
 
     it 'should retain isDeleted on flush error', ->

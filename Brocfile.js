@@ -140,6 +140,7 @@ var testTree = (function() {
       'mocha/mocha.js',
       'chai/chai.js',
       'sinonjs/sinon.js',
+      'localforage/dist/localforage.js',
       'jquery/dist/jquery.js',
       'handlebars/handlebars.runtime.js',
       'ember/ember.js',

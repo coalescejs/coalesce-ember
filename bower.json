@@ -11,5 +11,8 @@
     "ember-mocha-adapter": "~0.2.1",
     "lodash": "~2.4.1",
     "sinonjs": "~1.10.2"
+  },
+  "dependencies": {
+    "localforage": "~1.1.1"
   }
 }
