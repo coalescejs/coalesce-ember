@@ -16,6 +16,7 @@ describe 'integration', ->
 
     class @User extends Model
       name: attr 'string'
+      posts: hasMany 'post'
     @User.typeKey = 'user'
     
     class @Post extends Model
@@ -23,6 +24,9 @@ describe 'integration', ->
       user: belongsTo 'user'
       comments: hasMany 'comment'
     @Post.typeKey = 'post'
+
+    @User.reopenClass
+
     
     class @Comment extends Model
       text: attr 'string'
@@ -36,8 +40,7 @@ describe 'integration', ->
     true
     
   afterEach ->
-    teardownApp.apply(this)
-    
+    teardownApp.apply(this)   
     
   describe 'errors', ->
     
@@ -88,6 +91,7 @@ describe 'integration', ->
         id: '13b'
         title: "Jims second post"
 
+      debugger
       user1.get('posts').pushObject post1
       user1.get('posts').pushObject post2
 
