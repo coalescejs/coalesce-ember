@@ -24,9 +24,6 @@ describe 'integration', ->
       user: belongsTo 'user'
       comments: hasMany 'comment'
     @Post.typeKey = 'post'
-
-    @User.reopenClass
-
     
     class @Comment extends Model
       text: attr 'string'
