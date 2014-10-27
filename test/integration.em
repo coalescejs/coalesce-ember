@@ -37,8 +37,8 @@ describe 'integration', ->
     true
     
   afterEach ->
-    teardownApp.apply(this)   
-    
+    teardownApp.apply(this) 
+
   describe 'errors', ->
     
     it 'should use custom errors object', ->
@@ -71,35 +71,41 @@ describe 'integration', ->
       @container.register 'serializer:comment', @CommentSerializer
 
     it "should persist session state between saving and loading to storage", ->
+      server = @server
 
-      user1 = @session.create "user",
+      container = @container
+
+      mainSession = @session
+      session = mainSession.newSession()
+
+      user1 = session.create 'user',
         name: "Bob"
 
-      user2 = @session.create "user",
+      user2 = session.create 'user',
         name: "Jim"
 
-      post1 = @session.create "post",
+      post1 = session.create "post",
         title: "Bobs first post"
 
-      post2 = @session.create "post",
+      post2 = session.create "post",
         title: "Bobs second post"
 
-      post3 = @session.create "post",
+      post3 = session.create "post",
         title: "Jims first post"
 
-      post4 = @session.create "post",
+      post4 = session.create "post",
         title: "Jims second post"
 
-      comment1 = @session.create "comment",
+      comment1 = session.create "comment",
         text: "comment 1"
 
-      comment2 = @session.create "post",
+      comment2 = session.create "comment",
         text: "comment 2"
 
-      comment3 = @session.create "post",
+      comment3 = session.create "comment",
         title: "comment 3"
 
-      comment4 = @session.create "post",
+      comment4 = session.create "comment",
         title: "comment 4"
 
       user1.get('posts').pushObject post1
@@ -112,22 +118,47 @@ describe 'integration', ->
       post3.get('comments').pushObject comment3
       post4.get('comments').pushObject comment4
 
-      session = @session
-      container = @container
-      
-      expect(session.idManager.uuid).to.eq(11)
-      
-      expect(session.models.size).to.eq(10)
+      server.respondWith "POST", "/users", (xhr, url) ->
+        xhr.respond 204, { "Content-Type": "application/json" }, ""
 
-      EmberSession.saveToStorage(session).then ->
-        debugger
-        newSession = session.newSession()
+      server.respondWith "POST", "/posts", (xhr, url) ->
+        xhr.respond 204, { "Content-Type": "application/json" }, ""
 
-        EmberSession.loadFromStorage(newSession).then ->
-          debugger
-          expect(newSession.idManager.uuid).to.eq(11)
-          expect(newSession.models.size).to.eq(10)
+      server.respondWith "POST", "/comments", (xhr, url) ->
+        xhr.respond 204, { "Content-Type": "application/json" }, ""
+
+      # hack so that we can flush without having the server respond with proper ids
+      user1.set('id',1)
+      user2.set('id',2)
+
+      post1.set('id',1)
+      post2.set('id',2)
+      post3.set('id',3)
+      post4.set('id',4)
+
+      comment1.set('id',1)
+      comment2.set('id',2)
+      comment3.set('id',3)
+      comment4.set('id',4)
+      # end of hack
+
+      expect(user1.get('posts.length')).to.eq(2)
+
+      postFlush = (arg) ->      
+        expect(session.idManager.uuid).to.eq(11)
         
+        expect(session.models.size).to.eq(10)
+
+        EmberSession.saveToStorage(session).then (_session) ->
+          EmberSession.loadFromStorage(mainSession.newSession()).then (_newSession) ->
+            expect(_newSession.idManager.uuid).to.eq(11)
+            expect(_newSession.models.size).to.eq(10)
+
+            user = _newSession.load('user', 1).get('content')
+            expect(user.get('posts.length')).to.eq(2)
+
+      session.flush().then(postFlush, postFlush)
+
 
   describe 'online and offline crud', ->
 
