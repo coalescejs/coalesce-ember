@@ -52,7 +52,9 @@ describe 'integration', ->
         expect(user.errors.name).to.eq('is dumb')
 
   describe 'save and load from storage', ->
+
     beforeEach ->
+
       @UserSerializer = Coalesce.ModelSerializer.extend
         typeKey: 'user'
 
@@ -63,64 +65,69 @@ describe 'integration', ->
 
       @container.register 'serializer:post', @PostSerializer
 
+      @CommentSerializer = Coalesce.ModelSerializer.extend
+        typeKey: 'post'
+
+      @container.register 'serializer:comment', @CommentSerializer
+
     it "should persist session state between saving and loading to storage", ->
-      user1 = @User.create
-        id: 1
+
+      user1 = @session.create "user",
         name: "Bob"
 
-      user2 = @User.create
-        id: 2
+      user2 = @session.create "user",
         name: "Jim"
 
-      post1 = @Post.create
-        id: '12a'
+      post1 = @session.create "post",
         title: "Bobs first post"
 
-      post2 = @Post.create
-        id: '12b'
+      post2 = @session.create "post",
         title: "Bobs second post"
 
-      post3 = @Post.create
-        id: '13a'
+      post3 = @session.create "post",
         title: "Jims first post"
 
-      post4 = @Post.create
-        id: '13b'
+      post4 = @session.create "post",
         title: "Jims second post"
 
-      debugger
+      comment1 = @session.create "comment",
+        text: "comment 1"
+
+      comment2 = @session.create "post",
+        text: "comment 2"
+
+      comment3 = @session.create "post",
+        title: "comment 3"
+
+      comment4 = @session.create "post",
+        title: "comment 4"
+
       user1.get('posts').pushObject post1
       user1.get('posts').pushObject post2
-
       user2.get('posts').pushObject post3
       user2.get('posts').pushObject post4
 
-      @session.merge user1
-      @session.merge user2
-      # @session.merge post1
-      # @session.merge post2
+      post1.get('comments').pushObject comment1
+      post2.get('comments').pushObject comment2
+      post3.get('comments').pushObject comment3
+      post4.get('comments').pushObject comment4
 
       session = @session
       container = @container
       
-      expect(session.idManager.uuid).to.eq(7)
+      expect(session.idManager.uuid).to.eq(11)
       
-      expect(session.models.size).to.eq(6)
+      expect(session.models.size).to.eq(10)
 
-      EmberSession.saveToStorage(@session).then((()->
-        session = session.newSession()
-        EmberSession.loadFromStorage(session).then((->
+      EmberSession.saveToStorage(session).then ->
+        debugger
+        newSession = session.newSession()
 
-          expect(session.idManager.uuid).to.eq(7)
-          expect(session.models.size).to.eq(6)
-        ),( ->
-          
-        ))
-      ),(() -> 
+        EmberSession.loadFromStorage(newSession).then ->
+          debugger
+          expect(newSession.idManager.uuid).to.eq(11)
+          expect(newSession.models.size).to.eq(10)
         
-      ))
-
-
 
   describe 'online and offline crud', ->
 
@@ -158,57 +165,57 @@ describe 'integration', ->
         
       ))
     # create 3 users, go offline, delete them all, go online, flush, check that all are indeed deleted
-    it 'should delete all (offline) deleted records after coming back online', ->
-      session = @session
-      server = @server
+    # it 'should delete all (offline) deleted records after coming back online', ->
+    #   session = @session
+    #   server = @server
 
-      server.respondWith "POST", "/users", (xhr, url) ->
-        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 1, name:"Jerry", client_rev:1, client_id:"user1"}]})
+    #   server.respondWith "POST", "/users", (xhr, url) ->
+    #     xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 1, name:"Jerry", client_rev:1, client_id:"user1"}]})
         
-      user = session.create('user', name: 'Jerry')
+    #   user = session.create('user', name: 'Jerry')
 
-      server.respondWith "POST", "/users", (xhr, url) ->
-        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 2, name:"Bob", client_rev:1, client_id:"user2"}]})
+    #   server.respondWith "POST", "/users", (xhr, url) ->
+    #     xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 2, name:"Bob", client_rev:1, client_id:"user2"}]})
         
-      user2 = session.create('user', name: 'Phil')
+    #   user2 = session.create('user', name: 'Phil')
 
-      server.respondWith "POST", "/users", (xhr, url) ->
-        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 3, name:"Phil", client_rev:1, client_id:"user3"}]})
+    #   server.respondWith "POST", "/users", (xhr, url) ->
+    #     xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 3, name:"Phil", client_rev:1, client_id:"user3"}]})
         
-      user3 = session.create('user', name: 'Jerry')
+    #   user3 = session.create('user', name: 'Jerry')
       
-      session.flush().then ->
+    #   session.flush().then ->
 
-        # go offline
-        server.respondWith "DELETE", "/users/1", (xhr, url) ->
-          xhr.respond 0, null, null
+    #     # go offline
+    #     server.respondWith "DELETE", "/users/1", (xhr, url) ->
+    #       xhr.respond 0, null, null
 
-        session.deleteModel(user)
+    #     session.deleteModel(user)
 
-        session.flush().then ->
+    #     session.flush().then ->
 
-          server.respondWith "DELETE", "/users/2", (xhr, url) ->
-            xhr.respond 0, null, null
+    #       server.respondWith "DELETE", "/users/2", (xhr, url) ->
+    #         xhr.respond 0, null, null
 
-          session.deleteModel(user2)
+    #       session.deleteModel(user2)
 
-          debugger 
-          session.flush().then ->
-            server.respondWith "DELETE", "/users/3", (xhr, url) ->
-              xhr.respond 0, null, null
+    #       debugger 
+    #       session.flush().then ->
+    #         server.respondWith "DELETE", "/users/3", (xhr, url) ->
+    #           xhr.respond 0, null, null
 
-            session.deleteModel(user3)
+    #         session.deleteModel(user3)
 
-            session.flush().then ->
+    #         session.flush().then ->
 
-              server.respondWith "DELETE", "/users/1", (xhr, url) ->
-                xhr.respond 204, {}, null
+    #           server.respondWith "DELETE", "/users/1", (xhr, url) ->
+    #             xhr.respond 204, {}, null
 
-              server.respondWith "DELETE", "/users/2", (xhr, url) ->
-                xhr.respond 204, {}, null
+    #           server.respondWith "DELETE", "/users/2", (xhr, url) ->
+    #             xhr.respond 204, {}, null
 
-              server.respondWith "DELETE", "/users/3", (xhr, url) ->
-                xhr.respond 204, {}, null
+    #           server.respondWith "DELETE", "/users/3", (xhr, url) ->
+    #             xhr.respond 204, {}, null
 
-              session.flush().then ->
-                # CHECK THAT THE OBJECTS ARE DELETED!
+    #           session.flush().then ->
+    #             # CHECK THAT THE OBJECTS ARE DELETED!

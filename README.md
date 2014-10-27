@@ -20,3 +20,10 @@ To build coalesce-ember, follow the instructions below:
 * `npm install`
 * `npm test` to run the tests via `mocha`
 * `npm build` to build a distributable
+
+### Parallel Development with Coalesce
+
+To build coalesce-ember with a local version of Coalesce, follow the instructions below:
+
+* Ensure the coalesce project folder is a sibling of coalesce-ember
+* `npm run-script cbuild`

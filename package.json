@@ -6,7 +6,8 @@
   "scripts": {
     "build": "rm -rf dist; broccoli build dist",
     "test": "testem ci",
-    "postinstall": "bower install"
+    "postinstall": "bower install",
+    "cbuild": "./cbuild.sh"
   },
   "repository": "https://github.com/coalescejs/coalesce-ember.git",
   "keywords": [

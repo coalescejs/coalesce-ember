@@ -14,6 +14,7 @@ function setupApp() {
 
 function teardownApp() {
   var self = this;
+  this.session.clearStorage();
   this.server.restore();
   Ember.run(function() {
     self.App.destroy();
