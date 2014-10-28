@@ -66,7 +66,7 @@ describe 'integration', ->
       @container.register 'serializer:post', @PostSerializer
 
       @CommentSerializer = Coalesce.ModelSerializer.extend
-        typeKey: 'post'
+        typeKey: 'comment'
 
       @container.register 'serializer:comment', @CommentSerializer
 
@@ -77,6 +77,8 @@ describe 'integration', ->
 
       mainSession = @session
       session = mainSession.newSession()
+
+      postSerializer = container.lookup('serializer:post')
 
       user1 = session.create 'user',
         name: "Bob"
@@ -114,9 +116,9 @@ describe 'integration', ->
       user2.get('posts').pushObject post4
 
       post1.get('comments').pushObject comment1
-      post2.get('comments').pushObject comment2
-      post3.get('comments').pushObject comment3
-      post4.get('comments').pushObject comment4
+      post1.get('comments').pushObject comment2
+      post1.get('comments').pushObject comment3
+      post1.get('comments').pushObject comment4
 
       server.respondWith "POST", "/users", (xhr, url) ->
         xhr.respond 204, { "Content-Type": "application/json" }, ""
@@ -144,6 +146,11 @@ describe 'integration', ->
 
       expect(user1.get('posts.length')).to.eq(2)
 
+      seralizedPost1 = postSerializer.serialize(post1)
+      seralizedPost2 = postSerializer.serialize(post2)
+      seralizedPost3 = postSerializer.serialize(post3)
+      seralizedPost4 = postSerializer.serialize(post4)
+
       postFlush = (arg) ->      
         expect(session.idManager.uuid).to.eq(11)
         
@@ -156,6 +163,23 @@ describe 'integration', ->
 
             user = _newSession.load('user', 1).get('content')
             expect(user.get('posts.length')).to.eq(2)
+            expect(user.get('posts.firstObject.comments.length')).to.eq(4)
+
+            response = "["+seralizedPost1+","+seralizedPost2+","+seralizedPost3+","+seralizedPost4+"]"
+
+            # offline call to query posts
+            server.respondWith "GET", "/posts", (xhr, url) ->
+              xhr.respond 0, null, null
+
+            # server.respondWith "GET", "/posts", (xhr, url) ->
+            #   xhr.respond 204, { "Content-Type": "application/json" }, response
+
+            _newSession.query('post').then(((posts) ->
+              
+            ),( (error) ->
+               expect(error).to.be.null
+            ))
+
 
       session.flush().then(postFlush, postFlush)
 
@@ -216,37 +240,37 @@ describe 'integration', ->
     #   user3 = session.create('user', name: 'Jerry')
       
     #   session.flush().then ->
-
+    #     debugger
     #     # go offline
-    #     server.respondWith "DELETE", "/users/1", (xhr, url) ->
-    #       xhr.respond 0, null, null
+    #     # server.respondWith "DELETE", "/users/1", (xhr, url) ->
+    #     #   xhr.respond 0, {}, ""
 
-    #     session.deleteModel(user)
+    #     #session.deleteModel(user)
 
     #     session.flush().then ->
-
+    #       debugger
     #       server.respondWith "DELETE", "/users/2", (xhr, url) ->
-    #         xhr.respond 0, null, null
+    #         xhr.respond 0, {}, ""
 
     #       session.deleteModel(user2)
 
-    #       debugger 
+           
     #       session.flush().then ->
     #         server.respondWith "DELETE", "/users/3", (xhr, url) ->
-    #           xhr.respond 0, null, null
+    #           xhr.respond 0, {}, ""
 
     #         session.deleteModel(user3)
 
     #         session.flush().then ->
 
     #           server.respondWith "DELETE", "/users/1", (xhr, url) ->
-    #             xhr.respond 204, {}, null
+    #             xhr.respond 204, {}, ""
 
     #           server.respondWith "DELETE", "/users/2", (xhr, url) ->
-    #             xhr.respond 204, {}, null
+    #             xhr.respond 204, {}, ""
 
     #           server.respondWith "DELETE", "/users/3", (xhr, url) ->
-    #             xhr.respond 204, {}, null
+    #             xhr.respond 204, {}, ""
 
     #           session.flush().then ->
     #             # CHECK THAT THE OBJECTS ARE DELETED!
