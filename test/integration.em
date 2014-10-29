@@ -67,14 +67,15 @@ describe 'integration', ->
         expect(user.errors.name).to.eq('is dumb')
 
   describe 'session.fetchQuery', ->
-    # TODO: should this test be here or in session?
+  
+    # TODO: if we keep the test this simple we should probably move to session specs
     it 'should retain hasMany relationships', ->
       session = @session
 
-      user1 = {id: 1, name:"Jerry", client_rev: null, client_id: null, post_ids: [1,2]}
-      user2 = {id: 2, name:"Bob", client_rev: null, client_id: null,post_ids: []}
-      post1 = {id: 1, title:"post 1", client_rev: null, client_id: null, user_id: 1}
-      post2 = {id: 2, title:"post 2", client_rev: null, client_id: null, user_id: 1}
+      user1 = {id: 1, name:"Jerry", client_rev: null, client_id: null, posts: [1,2]}
+      user2 = {id: 2, name:"Bob", client_rev: null, client_id: null,posts: []}
+      post1 = {id: 1, title:"post 1", client_rev: null, client_id: null, user: 1}
+      post2 = {id: 2, title:"post 2", client_rev: null, client_id: null, user: 1}
 
       users = [user1, user2]
       posts = [post1, post2]
@@ -89,7 +90,10 @@ describe 'integration', ->
         expect(user.get('posts.length')).to.eq(2)      
 
   describe 'save and load from storage', ->
-    it "should persist session state between saving and loading to storage", ->
+    
+    # TODO since these tests are written in emberscript (.em extension) we can
+    # skip using get/set e.g. user.set('id', 1) should just be user.id = 1
+    it.only "should persist session state between saving and loading to storage", ->
       server = @server
 
       container = @container
@@ -140,13 +144,13 @@ describe 'integration', ->
       post1.get('comments').pushObject comment4
 
       server.respondWith "POST", "/users", (xhr, url) ->
-        xhr.respond 204, { "Content-Type": "application/json" }, ""
+        xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
       server.respondWith "POST", "/posts", (xhr, url) ->
-        xhr.respond 204, { "Content-Type": "application/json" }, ""
+        xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
       server.respondWith "POST", "/comments", (xhr, url) ->
-        xhr.respond 204, { "Content-Type": "application/json" }, ""
+        xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
       # hack so that we can flush without having the server respond with proper ids
       user1.set('id',1)
@@ -184,7 +188,7 @@ describe 'integration', ->
             expect(user.get('posts.length')).to.eq(2)
             expect(user.get('posts.firstObject.comments.length')).to.eq(4)
 
-            response = "["+seralizedPost1+","+seralizedPost2+","+seralizedPost3+","+seralizedPost4+"]"
+            response = JSON.stringify([seralizedPost1, seralizedPost2, seralizedPost3, seralizedPost4])
 
             # offline call to query posts
             server.respondWith "GET", "/posts", (xhr, url) ->
@@ -196,7 +200,7 @@ describe 'integration', ->
             _newSession.query('post').then(((posts) ->
               
             ),( (error) ->
-               expect(error).to.be.null
+               expect(error.status).to.not.be.null
             ))
 
 
