@@ -86,13 +86,11 @@ describe 'integration', ->
 
       @session.query("user").then ->
         users = session.fetchQuery('user')
-        user = users.get('firstObject')
-        expect(user.get('posts.length')).to.eq(2)      
+        user = users.firstObject
+        expect(user.posts.length).to.eq(2)      
 
   describe 'save and load from storage', ->
     
-    # TODO since these tests are written in emberscript (.em extension) we can
-    # skip using get/set e.g. user.set('id', 1) should just be user.id = 1
     it "should persist session state between saving and loading to storage", ->
       server = @server
 
@@ -133,15 +131,15 @@ describe 'integration', ->
       comment4 = session.create "comment",
         title: "comment 4"
 
-      user1.get('posts').pushObject post1
-      user1.get('posts').pushObject post2
-      user2.get('posts').pushObject post3
-      user2.get('posts').pushObject post4
+      user1.posts.pushObject post1
+      user1.posts.pushObject post2
+      user2.posts.pushObject post3
+      user2.posts.pushObject post4
 
-      post1.get('comments').pushObject comment1
-      post1.get('comments').pushObject comment2
-      post1.get('comments').pushObject comment3
-      post1.get('comments').pushObject comment4
+      post1.comments.pushObject comment1
+      post1.comments.pushObject comment2
+      post1.comments.pushObject comment3
+      post1.comments.pushObject comment4
 
       server.respondWith "POST", "/users", (xhr, url) ->
         xhr.respond 204, { "Content-Type": "application/json" }, "{}"
@@ -153,21 +151,21 @@ describe 'integration', ->
         xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
       # hack so that we can flush without having the server respond with proper ids
-      user1.set('id',1)
-      user2.set('id',2)
+      user1.id = 1
+      user2.id = 2
 
-      post1.set('id',1)
-      post2.set('id',2)
-      post3.set('id',3)
-      post4.set('id',4)
+      post1.id = 1
+      post2.id = 2
+      post3.id = 3
+      post4.id = 4
 
-      comment1.set('id',1)
-      comment2.set('id',2)
-      comment3.set('id',3)
-      comment4.set('id',4)
+      comment1.id = 1
+      comment2.id = 2
+      comment3.id = 3
+      comment4.id = 4
       # end of hack
 
-      expect(user1.get('posts.length')).to.eq(2)
+      expect(user1.posts.length).to.eq(2)
 
       seralizedPost1 = postSerializer.serialize(post1)
       seralizedPost2 = postSerializer.serialize(post2)
@@ -184,9 +182,9 @@ describe 'integration', ->
             expect(_newSession.idManager.uuid).to.eq(11)
             expect(_newSession.models.size).to.eq(10)
 
-            user = _newSession.load('user', 1).get('content')
-            expect(user.get('posts.length')).to.eq(2)
-            expect(user.get('posts.firstObject.comments.length')).to.eq(4)
+            user = _newSession.load('user', 1).content
+            expect(user.posts.length).to.eq(2)
+            expect(user.posts.firstObject.comments.length).to.eq(4)
 
             response = JSON.stringify([seralizedPost1, seralizedPost2, seralizedPost3, seralizedPost4])
 
@@ -220,9 +218,9 @@ describe 'integration', ->
 
       session.flush().then((->
         expect(session.newModels.size).to.eq(0)
-        expect(session.models[0].get('name')).to.eq('Jerry')
-        expect(session.models[0].get('isNew')).to.be.false
-        expect(session.models[0].get('id')).to.eq('1')
+        expect(session.models[0].name).to.eq('Jerry')
+        expect(session.models[0].isNew).to.be.false
+        expect(session.models[0].id).to.eq('1')
 
         # go offline
         server.respondWith "DELETE", "/users/1", (xhr, url) ->
@@ -230,10 +228,10 @@ describe 'integration', ->
 
         session.deleteModel(user)
 
-        expect(session.models[0].get('isDeleted')).to.be.true
+        expect(session.models[0].isDeleted).to.be.true
 
         session.flush().then(null,(->
-          expect(session.models[0].get('isDeleted')).to.be.true
+          expect(session.models[0].isDeleted).to.be.true
 
           # next to add putting server back online
           # issueing flush
