@@ -93,7 +93,7 @@ describe 'integration', ->
     
     # TODO since these tests are written in emberscript (.em extension) we can
     # skip using get/set e.g. user.set('id', 1) should just be user.id = 1
-    it.only "should persist session state between saving and loading to storage", ->
+    it "should persist session state between saving and loading to storage", ->
       server = @server
 
       container = @container
