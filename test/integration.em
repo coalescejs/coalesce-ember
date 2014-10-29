@@ -34,6 +34,21 @@ describe 'integration', ->
     @container.register 'model:comment', @Comment
     @container.register 'model:user', @User
 
+    @UserSerializer = Coalesce.ModelSerializer.extend
+      typeKey: 'user'
+
+    @container.register 'serializer:user', @UserSerializer
+
+    @PostSerializer = Coalesce.ModelSerializer.extend
+      typeKey: 'post'
+
+    @container.register 'serializer:post', @PostSerializer
+
+    @CommentSerializer = Coalesce.ModelSerializer.extend
+      typeKey: 'comment'
+
+    @container.register 'serializer:comment', @CommentSerializer
+
     true
     
   afterEach ->
@@ -51,25 +66,29 @@ describe 'integration', ->
         expect(user.errors).to.be.an.instanceOf(Errors)
         expect(user.errors.name).to.eq('is dumb')
 
+  describe 'session.fetchQuery', ->
+    # TODO: should this test be here or in session?
+    it 'should retain hasMany relationships', ->
+      session = @session
+
+      user1 = {id: 1, name:"Jerry", client_rev: null, client_id: null, post_ids: [1,2]}
+      user2 = {id: 2, name:"Bob", client_rev: null, client_id: null,post_ids: []}
+      post1 = {id: 1, title:"post 1", client_rev: null, client_id: null, user_id: 1}
+      post2 = {id: 2, title:"post 2", client_rev: null, client_id: null, user_id: 1}
+
+      users = [user1, user2]
+      posts = [post1, post2]
+      response = JSON.stringify({users: users, posts: posts})
+
+      @server.respondWith "GET", "/users", (xhr, url) ->
+        xhr.respond 200, { "Content-Type": "application/json" }, response
+
+      @session.query("user").then ->
+        users = session.fetchQuery('user')
+        user = users.get('firstObject')
+        expect(user.get('posts.length')).to.eq(2)      
+
   describe 'save and load from storage', ->
-
-    beforeEach ->
-
-      @UserSerializer = Coalesce.ModelSerializer.extend
-        typeKey: 'user'
-
-      @container.register 'serializer:user', @UserSerializer
-
-      @PostSerializer = Coalesce.ModelSerializer.extend
-        typeKey: 'post'
-
-      @container.register 'serializer:post', @PostSerializer
-
-      @CommentSerializer = Coalesce.ModelSerializer.extend
-        typeKey: 'comment'
-
-      @container.register 'serializer:comment', @CommentSerializer
-
     it "should persist session state between saving and loading to storage", ->
       server = @server
 
