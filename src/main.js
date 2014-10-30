@@ -7,7 +7,7 @@ import Model from './model/model';
 import {attr, hasMany, belongsTo} from './model/model';
 import HasManyArray from './collections/has_many_array';
 import EmberSession from './session';
-import PromiseArray from './promise';
+import {ModelPromise, PromiseArray} from './promise';
 
 Cs.Model = Model;
 Cs.attr = attr;
