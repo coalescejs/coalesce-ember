@@ -7,6 +7,7 @@ import Model from './model/model';
 import {attr, hasMany, belongsTo} from './model/model';
 import HasManyArray from './collections/has_many_array';
 import EmberSession from './session';
+import PromiseArray from './promise';
 
 Cs.Model = Model;
 Cs.attr = attr;
@@ -15,6 +16,7 @@ Cs.belongsTo = belongsTo;
 Cs.EmberSession = EmberSession;
 
 Coalesce.Promise = Ember.RSVP.Promise;
+Coalesce.PromiseArray = PromiseArray;
 Coalesce.ajax = Ember.$.ajax;
 Coalesce.run = Ember.run;
 
