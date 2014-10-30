@@ -1,4 +1,4 @@
-`import {setupApp, teardownApp} from './support/app'`
+`import {setupApp, teardownApp, setupUserWithPosts} from './support/app'`
 `import Model from 'coalesce-ember/model/model'`
 `import {attr, hasMany, belongsTo} from 'coalesce-ember/model/model'`
 `import Attribute from 'coalesce/model/attribute'`
@@ -7,6 +7,7 @@
 `import Errors from 'coalesce-ember/model/errors'`
 `import Coalesce from 'coalesce'`
 `import EmberSession from 'coalesce-ember/session'`
+`import Container from 'coalesce-ember/container'`
 
 describe 'integration', ->
 
@@ -66,31 +67,84 @@ describe 'integration', ->
         expect(user.errors).to.be.an.instanceOf(Errors)
         expect(user.errors.name).to.eq('is dumb')
 
-  describe 'session.fetchQuery', ->
-  
-    # TODO: if we keep the test this simple we should probably move to session specs
-    it 'should retain hasMany relationships', ->
-      session = @session
-
-      user1 = {id: 1, name:"Jerry", client_rev: null, client_id: null, posts: [1,2]}
-      user2 = {id: 2, name:"Bob", client_rev: null, client_id: null,posts: []}
-      post1 = {id: 1, title:"post 1", client_rev: null, client_id: null, user: 1}
-      post2 = {id: 2, title:"post 2", client_rev: null, client_id: null, user: 1}
-
-      users = [user1, user2]
-      posts = [post1, post2]
-      response = JSON.stringify({users: users, posts: posts})
-
-      @server.respondWith "GET", "/users", (xhr, url) ->
-        xhr.respond 200, { "Content-Type": "application/json" }, response
-
-      @session.query("user").then ->
-        users = session.fetchQuery('user')
-        user = users.firstObject
-        expect(user.posts.length).to.eq(2)      
-
   describe 'save and load from storage', ->
-    
+    afterEach ->
+      # have to tear down again cause we re setup app in 'should retain relationships'
+      teardownApp.apply(@) 
+
+    it 'should retain relationships', ->
+
+      self = @
+      session = @session
+      server = @server
+
+      EmberSession.clearStorage().then ->
+        server.respondWith "POST", "/users", (xhr, url) ->
+          xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 1, name:"Jerrys", client_rev: 1, client_id: "user1"}]})
+          
+        user = session.create('user', name: 'Jerry')
+        
+        session.flush().then ->
+
+          # create/add posts
+          post = session.create('post', name: 'title1')
+          user.posts.pushObject post
+
+          server.respondWith "POST", "/posts", (xhr, url) ->
+            users = [{id: 1, name:"Jerry", client_rev: 2, client_id: "user1", posts:[1]}]
+            posts = [{id: 1, title:"title1", client_rev: 1, client_id: "post2", user_id: 1}]
+
+            xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: users, posts: posts})
+
+          # flush
+          session.flush().then ->
+            EmberSession.saveToStorage(session).then (_session) ->
+              # go offline
+              # reset app
+              teardownApp.apply(self) 
+              setupApp.apply(self)
+              App = self.App
+
+              class self.User extends Model
+                name: attr 'string'
+                posts: hasMany 'post'
+              self.User.typeKey = 'user'
+              
+              class self.Post extends Model
+                title: attr 'string'
+                user: belongsTo 'user'
+                comments: hasMany 'comment'
+              self.Post.typeKey = 'post'
+              
+              class self.Comment extends Model
+                text: attr 'string'
+                post: belongsTo 'post'
+              self.Comment.typeKey = 'comment'
+
+              self.container.register 'model:post', self.Post
+              self.container.register 'model:comment', self.Comment
+              self.container.register 'model:user', self.User
+
+              self.UserSerializer = Coalesce.ModelSerializer.extend
+                typeKey: 'user'
+
+              self.container.register 'serializer:user', self.UserSerializer
+
+              self.PostSerializer = Coalesce.ModelSerializer.extend
+                typeKey: 'post'
+
+              self.container.register 'serializer:post', self.PostSerializer
+
+              self.CommentSerializer = Coalesce.ModelSerializer.extend
+                typeKey: 'comment'
+
+              self.container.register 'serializer:comment', self.CommentSerializer
+              
+              EmberSession.loadFromStorage(self.session).then (session) ->
+                user = session.load('user', 1)
+                expect(user.posts.length).to.eq(1)
+  
+  describe 'save and load from storage', ->
     it "should persist session state between saving and loading to storage", ->
       server = @server
 
