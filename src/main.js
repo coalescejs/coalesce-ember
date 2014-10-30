@@ -14,9 +14,9 @@ Cs.attr = attr;
 Cs.hasMany = hasMany;
 Cs.belongsTo = belongsTo;
 Cs.EmberSession = EmberSession;
+Cs.PromiseArray = PromiseArray;
 
 Coalesce.Promise = Ember.RSVP.Promise;
-Coalesce.PromiseArray = PromiseArray;
 Coalesce.ajax = Ember.$.ajax;
 Coalesce.run = Ember.run;
 
