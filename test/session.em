@@ -1,5 +1,6 @@
 `import Coalesce from 'coalesce'`
 `import Model from 'coalesce-ember/model/model'`
+`import {ModelPromise, PromiseArray} from 'coalesce-ember/promise'`
 `import {attr, belongsTo, hasMany} from 'coalesce-ember/model/model'`
 `import {setupApp, teardownApp} from './support/app'`
 
@@ -39,18 +40,6 @@ describe 'Session', ->
 
         xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({posts: posts})
 
-    it 'should have an isFulfilled property', ->
+    it 'should be a PromiseArray', ->
       postPromiseArray = @session.query('post')
-      expect(postPromiseArray.isFulfilled).to.not.be.undefined
-
-    describe '.then', ->
-
-      it 'should have an isFulfilled property', ->
-        postPromiseArray = @session.query('post').then()
-        expect(postPromiseArray.isFulfilled).to.not.be.undefined
-
-      it 'should have contents with an isFulfilled property', ->
-        postPromiseArray = @session.query('post').then (posts)->
-          return posts
-        expect(postPromiseArray.isFulfilled).to.not.be.undefined
-
+      expect(postPromiseArray).to.be.an.instanceOf(PromiseArray)
