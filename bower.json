@@ -13,6 +13,6 @@
     "sinonjs": "~1.10.2"
   },
   "dependencies": {
-    "localforage": "~1.1.1"
+    "localforage": "https://github.com/mozilla/localForage.git#master"
   }
 }
