@@ -40,6 +40,7 @@ var EmberModel = applyEmber(Model, ['fields', 'ownFields', 'attributes', 'relati
   attributeDidChange: function(name) {
     Model.prototype.attributeDidChange.apply(this, arguments);
     Ember.propertyDidChange(this, name);
+    Ember.propertyDidChange(this, 'isDirty');
   },
   
   belongsToWillChange: function(name) {
