@@ -93,4 +93,35 @@ export default class EmberSession extends Session {
   }
 
 
+  /**
+    Mark a model as clean. This will prevent future
+    `flush` calls from persisting this model's state to
+    the server until the model is marked dirty again.
+
+    @method markClean
+    @param {Coalesce.Model} model
+  */
+  markClean(model) {
+    // as an optimization, model's without shadows
+    // are assumed to be clean
+    this.shadows.remove(model);
+    Ember.propertyDidChange(model, 'isDirty');
+  }
+
+  /**
+    Mark a model as dirty by touching it.
+    In essense, this really copies it to the shadow array if it isnt there.
+
+    @method modelWillBecomeDirty
+    @param {Coalesce.Mode} model
+  */
+  modelWillBecomeDirty(model) {
+    if(this._dirtyCheckingSuspended) {
+      return;
+    }
+    this.touch(model);
+    Ember.propertyDidChange(model, 'isDirty');
+  }
+
+
 }
