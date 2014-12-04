@@ -42,14 +42,14 @@ export default Ember.ArrayProxy.extend({
     }
   },
 
-  removeObject: function(obj) {
-    var loc = get(this, 'length') || 0;
-    while(--loc >= 0) {
-      var curObject = this.objectAt(loc) ;
-      if (curObject.isEqual(obj)) this.removeAt(loc) ;
-    }
-    return this ;
-  },
+  // removeObject: function(obj) {
+  //   var loc = get(this, 'length') || 0;
+  //   while(--loc >= 0) {
+  //     var curObject = this.objectAt(loc) ;
+  //     if (curObject && curObject.isEqual(obj)) this.removeAt(loc) ;
+  //   }
+  //   return this ;
+  // },
 
   contains: function(obj){
     for(var i = 0; i < get(this, 'length') ; i++) {

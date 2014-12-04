@@ -52,8 +52,11 @@ describe 'integration', ->
 
     true
     
-  afterEach ->
+  afterEach (done) ->
     teardownApp.apply(this) 
+    
+    EmberSession.clearStorage().then ->
+      done()
 
   describe 'errors', ->
     
