@@ -138,7 +138,7 @@ describe 'ember/model', ->
       class User extends Model
         name: attr 'string'
       @container.register('model:user', User)
-        
+      
       user = @session.create 'user',
         name: 'Wes'
 

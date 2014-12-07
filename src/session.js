@@ -129,50 +129,50 @@ export default class EmberSession extends Session {
 
     @return {CoalesceEmber.Model}
   */
-  _mergeModel(dest, ancestor, model) {
-    // if the model does not exist, no "merging"
-    // is required
-    if(!dest) {
-      if(model.isDetached) {
-        dest = model;
-      } else {
-        dest = model.copy();
-      }
+  // _mergeModel(dest, ancestor, model) {
+  //   // if the model does not exist, no "merging"
+  //   // is required
+  //   if(!dest) {
+  //     if(model.isDetached) {
+  //       dest = model;
+  //     } else {
+  //       dest = model.copy();
+  //     }
 
-      this.adopt(dest);
-      return dest;
-    }
+  //     this.adopt(dest);
+  //     return dest;
+  //   }
 
-    // set id for new records
-    dest.set('id', model.id);
-    dest.clientId = model.clientId;
-    // copy the server revision
-    dest.rev = model.rev;
+  //   // set id for new records
+  //   dest.set('id', model.id);
+  //   dest.clientId = model.clientId;
+  //   // copy the server revision
+  //   dest.rev = model.rev;
     
-    // TODO: move merging isDeleted into merge strategy
-    // dest.isDeleted = model.isDeleted;
+  //   // TODO: move merging isDeleted into merge strategy
+  //   // dest.isDeleted = model.isDeleted;
 
-    //XXX: why do we need this? at this point shouldn't the dest always be in
-    // the session?
-    this.adopt(dest);
+  //   //XXX: why do we need this? at this point shouldn't the dest always be in
+  //   // the session?
+  //   this.adopt(dest);
 
-    // as an optimization we might not have created a shadow
-    if(!ancestor) {
-      ancestor = dest;
-    }
+  //   // as an optimization we might not have created a shadow
+  //   if(!ancestor) {
+  //     ancestor = dest;
+  //   }
     
-    // Reify child client ids before merging. This isn't semantically
-    // required, but many data structures that might be used in the merging
-    // process use client ids.
-    model.eachChild(function(child) {
-      this.reifyClientId(child);
-    }, this);
+  //   // Reify child client ids before merging. This isn't semantically
+  //   // required, but many data structures that might be used in the merging
+  //   // process use client ids.
+  //   model.eachChild(function(child) {
+  //     this.reifyClientId(child);
+  //   }, this);
 
-    var strategy = this.mergeFactory.mergeFor(model.typeKey);
-    strategy.merge(dest, ancestor, model);
+  //   var strategy = this.mergeFactory.mergeFor(model.typeKey);
+  //   strategy.merge(dest, ancestor, model);
 
-    return dest;
-  }
+  //   return dest;
+  // }
 
 
 }
