@@ -58,6 +58,32 @@ describe 'integration', ->
     EmberSession.clearStorage().then ->
       done()
 
+  describe 'failed flushing in offline', ->
+    it "should preserve fields and relations", ->
+      user = @session.merge @User.create( id: "1", name: 'Jerry', posts: [@Post.create( id: "1" )])
+      post = @session.merge @Post.create( id: "1", user: user, title: "posting ish", comments: [])
+      comment = @session.create('comment', post: post, text: "New comment")
+
+      @server.respondWith "POST", "/users", (xhr, url) ->
+          xhr.respond 0, null, null
+
+      @server.respondWith "POST", "/posts", (xhr, url) ->
+          xhr.respond 0, null, null
+
+      @server.respondWith "POST", "/comments", (xhr, url) ->
+          xhr.respond 0, null, null
+
+      @session.flush().then null, (e) ->
+        expect(post.title).to.eq("posting ish")
+        expect(user.name).to.eq("Jerry")
+        expect(comment.text).to.eq("New comment")
+
+        expect(user.posts.firstObject).to.eq(post)
+        expect(post.user).to.eq(user)
+
+        expect(comment.post).to.eq(post)
+        expect(user.posts.firstObject.comments.firstObject).to.eq(comment)
+
   describe 'errors', ->
     
     it 'should use custom errors object', ->
@@ -74,6 +100,7 @@ describe 'integration', ->
     afterEach ->
       # have to tear down again cause we re setup app in 'should retain relationships'
       teardownApp.apply(@) 
+
 
     it 'should retain relationships', ->
 
