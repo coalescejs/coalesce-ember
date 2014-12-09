@@ -14,6 +14,6 @@
   },
   "dependencies": {
     "localforage": "https://github.com/mozilla/localForage.git#master",
-    "ember": "canary"
+    "ember": "1.9.0-beta.4"
   }
 }
