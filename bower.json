@@ -3,17 +3,16 @@
   "private": true,
   "devDependencies": {
     "coalesce": "coalescejs/coalesce-shim#0921226c45bc653731258ec7a836d291d33ad9b9",
-    "ember": "1.9.0-beta.4",
     "loader": "stefanpenner/loader.js#1.0.1",
     "jsondiffpatch": "~0.1.8",
     "mocha": "~1.20.1",
     "chai": "~1.9.1",
     "ember-mocha-adapter": "~0.2.1",
     "lodash": "~2.4.1",
-    "sinonjs": "~1.10.2"
+    "sinonjs": "~1.10.2",
+    "ember": "https://github.com/cheneveld/ember.js.git#1.9.0-no-man-set"
   },
   "dependencies": {
-    "localforage": "https://github.com/mozilla/localForage.git#master",
-    "ember": "1.9.0-beta.4"
+    "localforage": "https://github.com/mozilla/localForage.git#master"
   }
 }

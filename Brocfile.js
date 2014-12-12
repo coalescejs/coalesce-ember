@@ -143,7 +143,7 @@ var testTree = (function() {
       'localforage/dist/localforage.js',
       'jquery/dist/jquery.js',
       'handlebars/handlebars.runtime.js',
-      'ember/ember.js',
+      'ember/dist/ember.js',
       'ember-mocha-adapter/adapter.js',
       'lodash/dist/lodash.js',
       'loader/loader.js',
