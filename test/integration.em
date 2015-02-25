@@ -6,7 +6,6 @@
 `import HasMany from 'coalesce/model/has_many'`
 `import Errors from 'coalesce-ember/model/errors'`
 `import Coalesce from 'coalesce'`
-`import EmberSession from 'coalesce-ember/session'`
 `import Container from 'coalesce-ember/container'`
 
 describe 'integration', ->
@@ -55,7 +54,7 @@ describe 'integration', ->
   afterEach (done) ->
     teardownApp.apply(this) 
     
-    EmberSession.clearStorage().then ->
+    @session.clearStorage().then ->
       done()
 
   describe 'failed flushing in offline', ->
@@ -108,7 +107,7 @@ describe 'integration', ->
       session = @session
       server = @server
 
-      EmberSession.clearStorage().then ->
+      session.clearStorage().then ->
         server.respondWith "POST", "/users", (xhr, url) ->
           xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify({users: [{id: 1, name:"Jerrys", client_rev: 1, client_id: "user1"}]})
           
@@ -128,7 +127,7 @@ describe 'integration', ->
 
           # flush
           session.flush().then ->
-            EmberSession.saveToStorage(session).then (_session) ->
+            session.saveToStorage(session).then (_session) ->
               # go offline
               # reset app
               teardownApp.apply(self) 
@@ -155,7 +154,7 @@ describe 'integration', ->
               self.container.register 'model:comment', self.Comment
               self.container.register 'model:user', self.User
               
-              EmberSession.loadFromStorage(self.session).then (session) ->
+              session.loadFromStorage(self.session).then (session) ->
                 user = session.load('user', 1)
                 
                 expect(user.posts.length).to.eq(1)
@@ -247,8 +246,8 @@ describe 'integration', ->
         
         expect(session.models.size).to.eq(10)
 
-        EmberSession.saveToStorage(session).then (_session) ->
-          EmberSession.loadFromStorage(mainSession.newSession()).then (_newSession) ->
+        session.saveToStorage(session).then (_session) ->
+          session.loadFromStorage(mainSession.newSession()).then (_newSession) ->
             expect(_newSession.idManager.uuid).to.eq(11)
             expect(_newSession.models.size).to.eq(10)
 

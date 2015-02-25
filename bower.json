@@ -13,6 +13,6 @@
     "ember": "https://github.com/cheneveld/ember.js.git#1.9.0-no-man-set"
   },
   "dependencies": {
-    "localforage": "https://github.com/mozilla/localForage.git#master"
+    "dexie": "~1.0.2"
   }
 }
