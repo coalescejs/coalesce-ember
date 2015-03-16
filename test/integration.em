@@ -27,6 +27,8 @@ describe 'integration', ->
     
     class @Comment extends Model
       text: attr 'string'
+      meta1: attr 'string'
+      meta2: attr 'string'
       post: belongsTo 'post'
     @Comment.typeKey = 'comment'
 
@@ -273,7 +275,6 @@ describe 'integration', ->
 
       session.flush().then(postFlush, postFlush)
 
-
   describe 'online and offline crud', ->
 
     it 'should retain isDeleted on flush error', ->
@@ -309,3 +310,28 @@ describe 'integration', ->
       ),(->
         
       ))
+
+    it 'should only send dirty fields', ->
+      session = @session
+      server = @server
+
+      @server.respondWith "PUT", "/comments", (xhr, url) ->
+        # test request variables
+        debugger
+
+      comment = @session.merge @Comment.create
+        id: "1",
+        text: "this is text",
+        meta1: "this is meta1",
+        meta2: "this is meta2"
+        
+
+      comment.meta1 = "changeme"
+
+      @session.flush().then (models)->
+        debugger
+        
+
+      
+
+
