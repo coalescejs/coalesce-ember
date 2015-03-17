@@ -317,9 +317,11 @@ describe 'integration', ->
 
       @server.respondWith "PUT", "/comments/1", (xhr, url) ->
         hash = JSON.parse xhr.requestBody
-
+        
         expect(hash.comment.hasOwnProperty('text')).to.be.false 
         expect(hash.comment.hasOwnProperty('meta1')).to.be.true
+
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(hash)
 
       comment = @session.merge @Comment.create
         id: "1",
