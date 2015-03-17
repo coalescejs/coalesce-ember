@@ -315,9 +315,11 @@ describe 'integration', ->
       session = @session
       server = @server
 
-      @server.respondWith "PUT", "/comments", (xhr, url) ->
-        # test request variables
-        debugger
+      @server.respondWith "PUT", "/comments/1", (xhr, url) ->
+        hash = JSON.parse xhr.requestBody
+
+        expect(hash.comment.hasOwnProperty('text')).to.be.false 
+        expect(hash.comment.hasOwnProperty('meta1')).to.be.true
 
       comment = @session.merge @Comment.create
         id: "1",
@@ -328,10 +330,4 @@ describe 'integration', ->
 
       comment.meta1 = "changeme"
 
-      @session.flush().then (models)->
-        debugger
-        
-
-      
-
-
+      @session.flush()
