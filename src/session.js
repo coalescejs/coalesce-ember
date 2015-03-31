@@ -3,10 +3,9 @@ import {ModelPromise, PromiseArray} from './promise';
 import Query from './query';
 
 /**
+  Similar to the core Coalesce.js session, but with additional Ember.js niceties.
+
   @class Session
-  
-  Similar to the core Coalesce.js session, but with additional Ember.js
-  niceties.
 */
 export default class EmberSession extends Session {
 
@@ -106,6 +105,7 @@ export default class EmberSession extends Session {
     // are assumed to be clean
     this.shadows.remove(model);
     Ember.propertyDidChange(model, 'isDirty');
+    Ember.propertyDidChange(this, 'isDirty');
   }
 
   /**
@@ -121,6 +121,7 @@ export default class EmberSession extends Session {
     }
     this.touch(model);
     Ember.propertyDidChange(model, 'isDirty');
+    Ember.propertyDidChange(this, 'isDirty');
   }
 
   /**
