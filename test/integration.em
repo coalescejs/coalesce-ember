@@ -17,6 +17,7 @@ describe 'integration', ->
     class @User extends Model
       name: attr 'string'
       posts: hasMany 'post'
+      roles: hasMany 'role'
     @User.typeKey = 'user'
     
     class @Post extends Model
@@ -24,6 +25,11 @@ describe 'integration', ->
       user: belongsTo 'user'
       comments: hasMany 'comment'
     @Post.typeKey = 'post'
+
+    class @Role extends Model
+      name: attr 'string'
+      user: belongsTo 'user'
+    @Role.typeKey = 'role'
     
     class @Comment extends Model
       text: attr 'string'
@@ -35,6 +41,7 @@ describe 'integration', ->
     @container.register 'model:post', @Post
     @container.register 'model:comment', @Comment
     @container.register 'model:user', @User
+    @container.register 'model:role', @Role
 
     @UserSerializer = Coalesce.ModelSerializer.extend
       typeKey: 'user'
@@ -45,6 +52,11 @@ describe 'integration', ->
       typeKey: 'post'
 
     @container.register 'serializer:post', @PostSerializer
+
+    @RoleSerializer = Coalesce.ModelSerializer.extend
+      typeKey: 'role'
+
+    @container.register 'serializer:role', @RoleSerializer
 
     @CommentSerializer = Coalesce.ModelSerializer.extend
       typeKey: 'comment'
@@ -58,6 +70,55 @@ describe 'integration', ->
     
     @session.clearStorage().then ->
       done()
+
+  describe 'relations and session flushing', ->
+    it 'with existing parent creating multiple children in multiple flushes', ->
+      self = @
+      session = @session
+      server = @server
+
+      server.respondWith "GET", "/users", (xhr, url) ->
+        response = users: {id: 1,  name: 'parent',  client_id: null, client_rev: null, rev: 0}
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+      session.query('user').then(((models) ->
+        
+        server.respondWith "GET", "/users/1", (xhr, url) ->
+          response = users: {id: 1,  name: 'parent', posts: [], roles: [],  client_id: null, client_rev: null, rev: 1}, posts: [], roles: []
+          xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+        _user = models.firstObject
+
+        expect(_user.posts).to.be.undefined
+        expect(_user.roles).to.be.undefined
+
+        _user.refresh().then(((user) ->
+          expect(user.posts).to.not.be.undefined
+          expect(user.roles).to.not.be.undefined
+
+          post = session.create('post', title: 'child 1', user: user)
+
+          server.respondWith "POST", "/posts", (xhr, url) ->
+            response = posts: {id: 1, title: post.title, user_id: post.userId, client_id: post.clientId, client_rev: post.clientRev, rev: 0}
+            xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+          session.flush().then((->
+              expect(user.posts.length).to.eq(1)
+              expect(user.roles.length).to.eq(0)
+
+              role = session.create('role', name: 'child 2', user: user)
+
+              server.respondWith "POST", "/roles", (xhr, url) ->
+                response = roles: {id: 1, name: role.name, user_id: role.userId, client_id: role.clientId, client_rev: role.clientRev, rev: 0}
+                xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+              session.flush().then(((models)->
+                expect(_user.posts.length).to.eq(1)
+                expect(_user.roles.length).to.eq(1)
+              ),((e) -> expect("SHOULDN't GET HERE").to.be.null))
+          ),((e) -> expect("SHOULDN't GET HERE").to.be.null))
+        ),((e) -> expect("SHOULDN't GET HERE").to.be.null))
+      ),((e) -> expect("SHOULDN't GET HERE").to.be.null))
 
   describe 'failed flushing in offline', ->
     it "should preserve fields and relations", ->
