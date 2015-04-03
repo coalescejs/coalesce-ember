@@ -43,22 +43,22 @@ describe 'integration', ->
     @container.register 'model:user', @User
     @container.register 'model:role', @Role
 
-    @UserSerializer = Coalesce.ModelSerializer.extend
+    @UserSerializer = Coalesce.ActiveModelSerializer.extend
       typeKey: 'user'
 
     @container.register 'serializer:user', @UserSerializer
 
-    @PostSerializer = Coalesce.ModelSerializer.extend
+    @PostSerializer = Coalesce.ActiveModelSerializer.extend
       typeKey: 'post'
 
     @container.register 'serializer:post', @PostSerializer
 
-    @RoleSerializer = Coalesce.ModelSerializer.extend
+    @RoleSerializer = Coalesce.ActiveModelSerializer.extend
       typeKey: 'role'
 
     @container.register 'serializer:role', @RoleSerializer
 
-    @CommentSerializer = Coalesce.ModelSerializer.extend
+    @CommentSerializer = Coalesce.ActiveModelSerializer.extend
       typeKey: 'comment'
 
     @container.register 'serializer:comment', @CommentSerializer
@@ -78,13 +78,13 @@ describe 'integration', ->
       server = @server
 
       server.respondWith "GET", "/users", (xhr, url) ->
-        response = users: {id: 1,  name: 'parent',  client_id: null, client_rev: null, rev: 0}
+        response = {users: [{id: 1,  name: 'parent',  client_id: null, client_rev: null, rev: 0}]}
         xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
 
       session.query('user').then(((models) ->
         
         server.respondWith "GET", "/users/1", (xhr, url) ->
-          response = users: {id: 1,  name: 'parent', posts: [], roles: [],  client_id: null, client_rev: null, rev: 1}, posts: [], roles: []
+          response = {users: [{id: 1,  name: 'parent', post_ids: [], role_ids: [],  client_id: null, client_rev: null, rev: 1}], posts: [], roles: []}
           xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
 
         _user = models.firstObject
@@ -93,13 +93,14 @@ describe 'integration', ->
         expect(_user.roles).to.be.undefined
 
         _user.refresh().then(((user) ->
+          
           expect(user.posts).to.not.be.undefined
           expect(user.roles).to.not.be.undefined
-
+          
           post = session.create('post', title: 'child 1', user: user)
 
           server.respondWith "POST", "/posts", (xhr, url) ->
-            response = posts: {id: 1, title: post.title, user_id: post.userId, client_id: post.clientId, client_rev: post.clientRev, rev: 0}
+            response = {posts: [{id: 1, title: post.title, user_id: post.userId, client_id: post.clientId, client_rev: post.clientRev, rev: 0}]}
             xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
 
           session.flush().then((->
@@ -109,7 +110,7 @@ describe 'integration', ->
               role = session.create('role', name: 'child 2', user: user)
 
               server.respondWith "POST", "/roles", (xhr, url) ->
-                response = roles: {id: 1, name: role.name, user_id: role.userId, client_id: role.clientId, client_rev: role.clientRev, rev: 0}
+                response = {roles: [{id: 1, name: role.name, user_id: role.userId, client_id: role.clientId, client_rev: role.clientRev, rev: 0}]}
                 xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
 
               session.flush().then(((models)->
