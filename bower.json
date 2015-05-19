@@ -13,6 +13,7 @@
     "ember": "https://github.com/cheneveld/ember.js.git#1.9.0-no-man-set"
   },
   "dependencies": {
-    "dexie": "~1.0.4"
+    "dexie": "~1.0.4",
+    "rsvp": "~3.0.18"
   }
 }
