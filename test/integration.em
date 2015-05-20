@@ -82,7 +82,14 @@ describe 'integration', ->
         name: attr 'string'
         school: belongsTo 'school'
         position: belongsTo 'position'
+        injuries: hasMany 'injury'
+        evaluations: hasMany 'evaluation'
       @Player.typeKey = 'player'
+
+      class @Injury extends Model
+        name: attr 'string'
+        player: belongsTo 'player'
+      @Injury.typeKey = 'injury'
 
       class @Position extends Model
         name: attr 'string'
@@ -123,6 +130,7 @@ describe 'integration', ->
 
       @container.register 'model:school', @School
       @container.register 'model:player', @Player
+      @container.register 'model:injury', @Injury
       @container.register 'model:position', @Position
       @container.register 'model:factor', @Factor
       @container.register 'model:factortype', @FactorType
@@ -139,6 +147,11 @@ describe 'integration', ->
         typeKey: 'player'
 
       @container.register 'serializer:player', @PlayerSerializer
+
+      @InjurySerializer = Coalesce.ActiveModelSerializer.extend
+        typeKey: 'injury'
+
+      @container.register 'serializer:injury', @InjurySerializer
 
       @PositionSerializer = Coalesce.ActiveModelSerializer.extend
         typeKey: 'position'
@@ -197,7 +210,7 @@ describe 'integration', ->
       # @positionfactor8 = @session.merge @PositionFactor.create( id: "8", name: 'PF8', factor: @factor8, position: @position)
       # @positionfactor9 = @session.merge @PositionFactor.create( id: "9", name: 'PF9', factor: @factor9, position: @position)
 
-    it 'flushes with errors sucessfully', ->
+    it 'creating new flushes with errors sucessfully', ->
       self = @
       session = @session
       server = @server
@@ -261,6 +274,140 @@ describe 'integration', ->
           ))
         ))
       ))
+
+    it 'updating flushes with errors sucessfully', ->
+      self = @
+      session = @session
+      server = @server
+      player = null
+      evaluation = null
+      injury = null
+
+      server.respondWith "GET", "/players/1", (xhr, url) ->
+        player = {id: 1, name: 'Jerry', position_id: 1, school_id: 1, evaluation_ids: [1], injury_ids: [1], client_id: null, client_rev: null, rev: 1}
+        evaluation = {id: "1", name: '5555555555', player_id: 1, position_id: 1, client_id: null, client_rev: null, rev: 1}
+        injury = {id: "1", name: '5555555555', player_id: 1, client_id: null, client_rev: null, rev: 1}
+        response = {players: [player], evaluations: [evaluation], injuries: [injury]}
+        xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+      server.respondWith "PUT", "/evaluations/1", (xhr, url) ->
+        # debugger
+        if(evaluation.name == "fail")
+          response = {errors: {name: ['is to long']}}
+          xhr.respond 422, { "Content-Type": "application/json" }, JSON.stringify(response)
+        else
+          response = {evaluations: [{id: 1, name: evaluation.name, client_id: evaluation.clientId, client_rev: evaluation.clientRev, rev: 2}]}
+          xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+      server.respondWith "PUT", "/players/1", (xhr, url) ->
+        # debugger
+        if(player.name == "fail")
+          response = {errors: {name: ['is to long']}}
+          xhr.respond 422, { "Content-Type": "application/json" }, JSON.stringify(response)
+        else
+          response = {players: [{id: 1, name: player.name, client_id: player.clientId, client_rev: player.clientRev, rev: 2}]}
+          xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+      server.respondWith "PUT", "/injuries/1", (xhr, url) ->
+        # debugger
+        if(injury.name == "fail")
+          response = {errors: {name: ['is to long']}}
+          xhr.respond 422, { "Content-Type": "application/json" }, JSON.stringify(response)
+        else
+          response = {injuries: [{id: 1, name: injury.name, client_id: injury.clientId, client_rev: injury.clientRev, rev: 2}]}
+          xhr.respond 200, { "Content-Type": "application/json" }, JSON.stringify(response)
+
+      session.load('player', 1).then (model) ->
+
+        player = model
+        
+        expect(player.evaluations.size).to.not.eq(0)
+        expect(player.injuries.size).to.not.eq(0)
+
+        evaluation = player.evaluations.toArray()[0]
+        injury = player.injuries.toArray()[0]
+        
+        player.name = "fail"
+        evaluation.name = "fail"
+        injury.name = "fail"
+
+        session.flush().then(((models)->
+          expect("SHOULDN't GET HERE").to.be.null
+        ),((errModels)-> 
+          errModels.forEach (model) ->
+            if model.clientId == evaluation.clientId || model.clientId == player.clientId || model.clientId == injury.clientId
+              expect(model.hasErrors).to.be.true
+              expect(model.isDirty).to.be.true
+
+          expect(evaluation.hasErrors).to.be.true
+          expect(player.hasErrors).to.be.true
+          expect(injury.hasErrors).to.be.true
+          expect(evaluation.isDirty).to.be.true
+          expect(player.isDirty).to.be.true
+          expect(injury.isDirty).to.be.true
+
+          evaluation.name = "nonfail"
+            
+          session.flush().then(((models)->
+            expect("SHOULDN't GET HERE").to.be.null
+          ),((errModels)-> 
+            errModels.forEach (model) ->
+              if model.clientId == evaluation.clientId
+                expect(model.hasErrors).to.be.false
+                expect(model.isDirty).to.be.false
+
+              if model.clientId == player.clientId || model.clientId == injury.clientId
+                expect(model.hasErrors).to.be.true
+                expect(model.isDirty).to.be.true
+
+            expect(evaluation.hasErrors).to.be.false
+            expect(player.hasErrors).to.be.true
+            expect(injury.hasErrors).to.be.true
+            expect(evaluation.isDirty).to.be.false
+            expect(player.isDirty).to.be.true
+            expect(injury.isDirty).to.be.true
+
+            player.name = "nonfail"
+
+            session.flush().then(((models)->
+              expect("SHOULDN't GET HERE").to.be.null
+            ),((errModels)-> 
+              errModels.forEach (model) ->
+                if model.clientId == player.clientId || model.clientId == evaluation.clientId
+                  expect(model.hasErrors).to.be.false
+                  expect(model.isDirty).to.be.false
+
+                if model.clientId == injury.clientId
+                  expect(model.hasErrors).to.be.true
+                  expect(model.isDirty).to.be.true
+
+              expect(evaluation.hasErrors).to.be.false
+              expect(player.hasErrors).to.be.false
+              expect(injury.hasErrors).to.be.true
+              expect(evaluation.isDirty).to.be.false
+              expect(player.isDirty).to.be.false
+              expect(injury.isDirty).to.be.true
+
+              injury.name = "nonfail"
+
+              session.flush().then(((models)->
+                models.forEach (model) ->
+                  if model.clientId == evaluation.clientId || model.clientId == player.clientId || model.clientId == injury.clientId
+                    expect(model.hasErrors).to.be.false
+                    expect(model.isDirty).to.be.false
+
+                expect(evaluation.hasErrors).to.be.false
+                expect(player.hasErrors).to.be.false
+                expect(injury.hasErrors).to.be.false
+                expect(evaluation.isDirty).to.be.false
+                expect(player.isDirty).to.be.false
+                expect(injury.isDirty).to.be.false
+              ),((errModels)-> 
+                expect("SHOULDN't GET HERE").to.be.null
+              ))
+            ))
+          ))
+        ))
 
   describe 'relations and session flushing', ->
     it 'with existing parent creating multiple children in multiple flushes', ->
