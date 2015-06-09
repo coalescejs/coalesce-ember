@@ -63,6 +63,8 @@ describe 'integration', ->
 
     @container.register 'serializer:comment', @CommentSerializer
 
+    @SessionSerializer = @container.lookup('serializer:session');
+
     true
     
   afterEach (done) ->
@@ -73,6 +75,14 @@ describe 'integration', ->
 
   describe 'complex model graph', ->
     beforeEach ->
+      class @Scout extends Model
+        firstName: attr 'string'
+        lastName: attr 'string'
+        evaluations: hasMany 'evaluation'
+        recentevaluations: hasMany 'evaluation'
+        recentschools: hasMany 'school'
+      @Scout.typeKey = 'scout'
+
       class @School extends Model
         name: attr 'string'
         players: hasMany 'player'
@@ -82,6 +92,7 @@ describe 'integration', ->
         name: attr 'string'
         school: belongsTo 'school'
         position: belongsTo 'position'
+        scout: belongsTo 'scout'
         injuries: hasMany 'injury'
         evaluations: hasMany 'evaluation'
       @Player.typeKey = 'player'
@@ -117,6 +128,8 @@ describe 'integration', ->
       class @Evaluation extends Model
         name: attr 'string'
         position: belongsTo 'position'
+        school: belongsTo 'school'
+        scout: belongsTo 'scout'
         player: belongsTo 'player'
         grades: hasMany 'grade'
       @Evaluation.typeKey = 'evaluation'
@@ -128,6 +141,7 @@ describe 'integration', ->
       @Grade.typeKey = 'grade'
 
 
+      @container.register 'model:scout', @Scout
       @container.register 'model:school', @School
       @container.register 'model:player', @Player
       @container.register 'model:injury', @Injury
@@ -137,6 +151,12 @@ describe 'integration', ->
       @container.register 'model:positionfactor', @PositionFactor
       @container.register 'model:evaluation', @Evaluation
       @container.register 'model:grade', @Grade
+
+
+      @ScoutSerializer = Coalesce.ActiveModelSerializer.extend
+        typeKey: 'scout'
+
+      @container.register 'serializer:scout', @ScoutSerializer
 
       @SchoolSerializer = Coalesce.ActiveModelSerializer.extend
         typeKey: 'school'
@@ -185,35 +205,34 @@ describe 'integration', ->
 
       @container.register 'serializer:grade', @GradeSerializer
 
+    it 'session serialization with new models serializes and deserializes correctly', ->
+      self = @
+      session = @session
+      server = @server
+
       @school = @session.merge @School.create( id: "1", name: 'USF')
       @position = @session.merge @Position.create( id: "1", name: 'QB')
       @factortype1 = @session.merge @FactorType.create( id: "1", name: 'FT1')
-      # @factortype2 = @session.merge @FactorType.create( id: "2", name: 'FT2')
-      # @factortype3 = @session.merge @FactorType.create( id: "3", name: 'FT3')
       @factor1 = @session.merge @Factor.create( id: "1", name: 'F1', factortype: @factortype1)
-      # @factor2 = @session.merge @Factor.create( id: "2", name: 'F2', factortype: @factortype1)
-      # @factor3 = @session.merge @Factor.create( id: "3", name: 'F3', factortype: @factortype1)
-      # @factor4 = @session.merge @Factor.create( id: "4", name: 'F4', factortype: @factortype2)
-      # @factor5 = @session.merge @Factor.create( id: "5", name: 'F5', factortype: @factortype2)
-      # @factor6 = @session.merge @Factor.create( id: "6", name: 'F6', factortype: @factortype2)
-      # @factor7 = @session.merge @Factor.create( id: "7", name: 'F7', factortype: @factortype3)
-      # @factor8 = @session.merge @Factor.create( id: "8", name: 'F8', factortype: @factortype3)
-      # @factor9 = @session.merge @Factor.create( id: "9", name: 'F9', factortype: @factortype3)
-
       @positionfactor1 = @session.merge @PositionFactor.create( id: "1", name: 'PF1', factor: @factor1, position: @position)
-      # @positionfactor2 = @session.merge @PositionFactor.create( id: "2", name: 'PF2', factor: @factor2, position: @position)
-      # @positionfactor3 = @session.merge @PositionFactor.create( id: "3", name: 'PF3', factor: @factor3, position: @position)
-      # @positionfactor4 = @session.merge @PositionFactor.create( id: "4", name: 'PF4', factor: @factor4, position: @position)
-      # @positionfactor5 = @session.merge @PositionFactor.create( id: "5", name: 'PF5', factor: @factor5, position: @position)
-      # @positionfactor6 = @session.merge @PositionFactor.create( id: "6", name: 'PF6', factor: @factor6, position: @position)
-      # @positionfactor7 = @session.merge @PositionFactor.create( id: "7", name: 'PF7', factor: @factor7, position: @position)
-      # @positionfactor8 = @session.merge @PositionFactor.create( id: "8", name: 'PF8', factor: @factor8, position: @position)
-      # @positionfactor9 = @session.merge @PositionFactor.create( id: "9", name: 'PF9', factor: @factor9, position: @position)
 
+      player = @session.merge @Player.create( id: "1", name: 'Jerry', school: @school, position: @position)
+      evaluation = @session.create('evaluation', name: "5555555555", position: @position, player: player) #eval
+      grade = @session.create('grade', name: "grade1", evaluation: evaluation, factor: @factor1) #grades
+
+      session.saveToStorage().then ->
+        session.newSession().loadFromStorage().then (session) ->
+          
     it 'creating new flushes with errors sucessfully', ->
       self = @
       session = @session
       server = @server
+
+      @school = @session.merge @School.create( id: "1", name: 'USF')
+      @position = @session.merge @Position.create( id: "1", name: 'QB')
+      @factortype1 = @session.merge @FactorType.create( id: "1", name: 'FT1')
+      @factor1 = @session.merge @Factor.create( id: "1", name: 'F1', factortype: @factortype1)
+      @positionfactor1 = @session.merge @PositionFactor.create( id: "1", name: 'PF1', factor: @factor1, position: @position)
 
       # non-new
       player = @session.merge @Player.create( id: "1", name: 'Jerry', school: @school, position: @position)
@@ -561,119 +580,119 @@ describe 'integration', ->
                 
                 expect(user.posts.length).to.eq(1)
   
-  # describe 'save and load from storage', ->
-  #   it "should persist session state between saving and loading to storage", ->
-  #     server = @server
+  describe 'save and load from storage', ->
+    it "should persist session state between saving and loading to storage", ->
+      server = @server
 
-  #     container = @container
+      container = @container
 
-  #     mainSession = @session
-  #     session = mainSession.newSession()
+      mainSession = @session
+      session = mainSession.newSession()
 
-  #     postSerializer = container.lookup('serializer:post')
+      postSerializer = container.lookup('serializer:post')
 
-  #     user1 = session.create 'user',
-  #       name: "Bob"
+      user1 = session.create 'user',
+        name: "Bob"
 
-  #     user2 = session.create 'user',
-  #       name: "Jim"
+      user2 = session.create 'user',
+        name: "Jim"
 
-  #     post1 = session.create "post",
-  #       title: "Bobs first post"
+      post1 = session.create "post",
+        title: "Bobs first post"
 
-  #     post2 = session.create "post",
-  #       title: "Bobs second post"
+      post2 = session.create "post",
+        title: "Bobs second post"
 
-  #     post3 = session.create "post",
-  #       title: "Jims first post"
+      post3 = session.create "post",
+        title: "Jims first post"
 
-  #     post4 = session.create "post",
-  #       title: "Jims second post"
+      post4 = session.create "post",
+        title: "Jims second post"
 
-  #     comment1 = session.create "comment",
-  #       text: "comment 1"
+      comment1 = session.create "comment",
+        text: "comment 1"
 
-  #     comment2 = session.create "comment",
-  #       text: "comment 2"
+      comment2 = session.create "comment",
+        text: "comment 2"
 
-  #     comment3 = session.create "comment",
-  #       title: "comment 3"
+      comment3 = session.create "comment",
+        title: "comment 3"
 
-  #     comment4 = session.create "comment",
-  #       title: "comment 4"
+      comment4 = session.create "comment",
+        title: "comment 4"
 
-  #     user1.posts.pushObject post1
-  #     user1.posts.pushObject post2
-  #     user2.posts.pushObject post3
-  #     user2.posts.pushObject post4
+      user1.posts.pushObject post1
+      user1.posts.pushObject post2
+      user2.posts.pushObject post3
+      user2.posts.pushObject post4
 
-  #     post1.comments.pushObject comment1
-  #     post1.comments.pushObject comment2
-  #     post1.comments.pushObject comment3
-  #     post1.comments.pushObject comment4
+      post1.comments.pushObject comment1
+      post1.comments.pushObject comment2
+      post1.comments.pushObject comment3
+      post1.comments.pushObject comment4
 
-  #     server.respondWith "POST", "/users", (xhr, url) ->
-  #       xhr.respond 204, { "Content-Type": "application/json" }, "{}"
+      server.respondWith "POST", "/users", (xhr, url) ->
+        xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
-  #     server.respondWith "POST", "/posts", (xhr, url) ->
-  #       xhr.respond 204, { "Content-Type": "application/json" }, "{}"
+      server.respondWith "POST", "/posts", (xhr, url) ->
+        xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
-  #     server.respondWith "POST", "/comments", (xhr, url) ->
-  #       xhr.respond 204, { "Content-Type": "application/json" }, "{}"
+      server.respondWith "POST", "/comments", (xhr, url) ->
+        xhr.respond 204, { "Content-Type": "application/json" }, "{}"
 
-  #     # hack so that we can flush without having the server respond with proper ids
-  #     user1.id = 1
-  #     user2.id = 2
+      # hack so that we can flush without having the server respond with proper ids
+      user1.id = 1
+      user2.id = 2
 
-  #     post1.id = 1
-  #     post2.id = 2
-  #     post3.id = 3
-  #     post4.id = 4
+      post1.id = 1
+      post2.id = 2
+      post3.id = 3
+      post4.id = 4
 
-  #     comment1.id = 1
-  #     comment2.id = 2
-  #     comment3.id = 3
-  #     comment4.id = 4
-  #     # end of hack
+      comment1.id = 1
+      comment2.id = 2
+      comment3.id = 3
+      comment4.id = 4
+      # end of hack
 
-  #     expect(user1.posts.length).to.eq(2)
+      expect(user1.posts.length).to.eq(2)
 
-  #     seralizedPost1 = postSerializer.serialize(post1)
-  #     seralizedPost2 = postSerializer.serialize(post2)
-  #     seralizedPost3 = postSerializer.serialize(post3)
-  #     seralizedPost4 = postSerializer.serialize(post4)
+      seralizedPost1 = postSerializer.serialize(post1)
+      seralizedPost2 = postSerializer.serialize(post2)
+      seralizedPost3 = postSerializer.serialize(post3)
+      seralizedPost4 = postSerializer.serialize(post4)
 
-  #     postFlush = (arg) ->      
-  #       expect(session.idManager.uuid).to.eq(11)
+      postFlush = (arg) ->      
+        expect(session.idManager.uuid).to.eq(11)
         
-  #       expect(session.models.size).to.eq(10)
+        expect(session.models.size).to.eq(10)
 
-  #       session.saveToStorage(session).then (_session) ->
-  #         session.loadFromStorage(mainSession.newSession()).then (_newSession) ->
-  #           expect(_newSession.idManager.uuid).to.eq(11)
-  #           expect(_newSession.models.size).to.eq(10)
+        session.saveToStorage(session).then (_session) ->
+          session.loadFromStorage(mainSession.newSession()).then (_newSession) ->
+            expect(_newSession.idManager.uuid).to.eq(11)
+            expect(_newSession.models.size).to.eq(10)
 
-  #           user = _newSession.load('user', 1).content
-  #           expect(user.posts.length).to.eq(2)
-  #           expect(user.posts.firstObject.comments.length).to.eq(4)
+            user = _newSession.load('user', 1).content
+            expect(user.posts.length).to.eq(2)
+            expect(user.posts.firstObject.comments.length).to.eq(4)
 
-  #           response = JSON.stringify([seralizedPost1, seralizedPost2, seralizedPost3, seralizedPost4])
+            response = JSON.stringify([seralizedPost1, seralizedPost2, seralizedPost3, seralizedPost4])
 
-  #           # offline call to query posts
-  #           server.respondWith "GET", "/posts", (xhr, url) ->
-  #             xhr.respond 0, null, null
+            # offline call to query posts
+            server.respondWith "GET", "/posts", (xhr, url) ->
+              xhr.respond 0, null, null
 
-  #           # server.respondWith "GET", "/posts", (xhr, url) ->
-  #           #   xhr.respond 204, { "Content-Type": "application/json" }, response
+            # server.respondWith "GET", "/posts", (xhr, url) ->
+            #   xhr.respond 204, { "Content-Type": "application/json" }, response
 
-  #           _newSession.query('post').then(((posts) ->
+            _newSession.query('post').then(((posts) ->
               
-  #           ),( (error) ->
-  #              expect(error.status).to.not.be.null
-  #           ))
+            ),( (error) ->
+               expect(error.status).to.not.be.null
+            ))
 
 
-  #     session.flush().then(postFlush, postFlush)
+      session.flush().then(postFlush, postFlush)
 
   describe 'online and offline crud', ->
 
